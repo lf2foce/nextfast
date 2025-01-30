@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 
+interface EssayResponse {
+  scores: Record<string, number>;
+  feedback: Record<string, string>;
+}
+
+
 export default function Home() {
     const [essay, setEssay] = useState("");
-    const [response, setResponse] = useState(null);
+    const [response, setResponse] = useState<EssayResponse | null>(null);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
@@ -29,7 +35,7 @@ export default function Home() {
             <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
                 <textarea
                     className="w-full p-4 border rounded bg-gray-700 text-white resize-none"
-                    rows="6"
+                    rows={6}
                     placeholder="Enter your essay here..."
                     value={essay}
                     onChange={(e) => setEssay(e.target.value)}
