@@ -1,15 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  // fastapi 
-  rewrites: async () => {
+  async rewrites() {
     return [
       {
         source: "/api/py/:path*",
         destination:
           process.env.NODE_ENV === "development"
-            ? "http://127.0.0.1:8000/api/py/:path*"
+            ? "http://127.0.0.1:8000/api/py/:path*"  // ✅ Ensure FastAPI is running here
             : "/api/",
       },
       {
@@ -28,7 +26,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // end fastapi
 };
 
 export default nextConfig;

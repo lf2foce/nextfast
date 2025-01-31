@@ -1,5 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 import base64
+from fastapi.responses import StreamingResponse
+import asyncio
+
 # import pandas as pd
 from pydantic import BaseModel
 from typing import List, Dict, Optional
@@ -8,6 +11,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import logging
 import os
+import json
 
 load_dotenv()
 
@@ -55,6 +59,7 @@ class Feedback(BaseModel):
     grammatical_range_and_accuracy: str
 
 class IELTSWritingEvaluation(BaseModel):
+    topic: str
     word_count: int
     score: Score
     feedback: Feedback
@@ -64,7 +69,7 @@ class IELTSWritingEvaluation(BaseModel):
 
     @classmethod
     def from_essay(
-        cls, essay_text: str, scores: Dict[str, float], feedback: Dict[str, str], suggestions: List[str]
+        cls, topic:str, essay_text: str, scores: Dict[str, float], feedback: Dict[str, str], suggestions: List[str]
     ) -> "IELTSWritingEvaluation":
         """Factory method to compute word count and overall band dynamically"""
         word_count = len(essay_text.split())
@@ -81,6 +86,7 @@ class IELTSWritingEvaluation(BaseModel):
             overall_band = math.floor(avg_score) + 0.5
 
         return cls(
+            topic=topic,
             word_count=word_count,
             score=Score(overall_band=overall_band, **scores),
             feedback=Feedback(**feedback),
@@ -101,21 +107,25 @@ def process_ielts_essay(essay_text: str):
         model="gpt-4o",
         messages=[
             {"role": "system", 
-             "content": """ You are an experienced IELTS writing examiner. Your task is to evaluate IELTS essays according to the official band descriptors.
+             "content": """ You are an IELTS examiner. Your task is to analyze IELTS Writing Task 2 responses and evaluate them based on official band descriptors.
 
                 Each input contains:
-                - A **topic/question** at the beginning.
+                - A **topic/question** at the beginning (if available).
                 - A **writing response** following the topic.
 
                 ### **Your Tasks:**
-                1. **Identify the topic/question.** Extract the topic from the beginning of the input.
+                1. **Identify the topic/question.**
+                - If a clear topic/question is provided, extract it from the beginning of the input.
+                - If no topic is explicitly mentioned, **generate a relevant topic** based on the essay content.
+
                 2. **Evaluate the essay based on IELTS criteria:**
                 - **Task Response (TR):** Does the essay fully address the topic? Are arguments well-developed?
                 - **Coherence & Cohesion (CC):** Is the essay logically structured with clear paragraphing and linking words?
                 - **Lexical Resource (LR):** How rich and precise is the vocabulary?
                 - **Grammatical Range & Accuracy (GRA):** Are sentences grammatically correct with varied structures?
+
                 3. **Return a JSON response** with:
-                - `topic`: The extracted topic/question.
+                - `topic`: The extracted or generated topic/question.
                 - `scores`: Band scores (0-9) for TR, CC, LR, and GRA.
                 - `feedback`: Detailed feedback for each criterion.
                 - `suggestions`: Actionable improvements.
@@ -123,12 +133,13 @@ def process_ielts_essay(essay_text: str):
                 - `word_count`: The number of words in the essay."""},
             {"role": "user", 
              "content": f""" 
-                Please evaluate my IELTS writing task. The input contains:
-                1. **Topic/Question** (First part of the text).
+               Please evaluate my IELTS writing task. The input contains:
+                1. **Topic/Question** (First part of the text, if available).
                 2. **Essay Response** (Following text).
 
                 Your task:
-                - Identify and extract the **topic/question**.
+                - Identify and extract the **topic/question** if present.
+                - If no topic is found, **generate a relevant topic based on the essay**.
                 - Evaluate the **essay content** based on the official IELTS writing band descriptors.
                 - Provide structured **scores, feedback, and suggestions** for improvement.
 
@@ -143,6 +154,7 @@ def process_ielts_essay(essay_text: str):
     result = completion.choices[0].message.parsed
     result.original_essay = essay_text  # Attach original essay
     
+    print(f"IELTS Writing Evaluation Result: {result.model_dump_json(indent=4)}")
     return result
 
 @app.post("/api/py/evaluate", response_model=IELTSWritingEvaluation)
@@ -163,17 +175,34 @@ async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Opt
         vision_response = client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             messages=[
+                {"role": "system", "content": "You are an IELTS evaluator. Your task is to extract the topic and the essay from the provided image. The image contains an IELTS Writing Task 2 prompt followed by an essay response."},
                 {"role": "user", "content": [
-                    {"type": "text", "text": "Analyze the image and extract the IELTS essay along with its topic. Return the response in the exact format below:\n\nTopic:\n<Extracted Topic>\n\nEssay:\n<Extracted Essay>"},
+                    {"type": "text", "text": "Extract the IELTS Writing Task 2 topic and the full essay. If no clear topic is found, return only the essay. Use this exact structured JSON format:\n\n{\n  \"topic\": \"Extracted topic here\",\n  \"essay\": \"Extracted essay text here\"\n}"},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                 ]}
             ]
         )
 
-        extracted_text = vision_response.choices[0].message.content
-        essay_text = extracted_text.split("Essay:")[-1].strip()
-        print(f"Extracted text: {essay_text}")
+        try:
+            extracted_text = vision_response.choices[0].message.content
+
+            # ✅ Ensure response is JSON by parsing it
+            parsed_response = json.loads(extracted_text)  # Convert string to dictionary
+
+            topic_text = parsed_response.get("topic", None)  # ✅ Extract topic
+            essay_text = parsed_response.get("essay", "").strip()  # ✅ Extract essay
+
+        except json.JSONDecodeError as e:
+            print(f"❌ Error: Could not parse GPT response as JSON - {str(e)}")
+            return IELTSWritingEvaluation(error="Failed to extract topic and essay from image.")
+        
+        if not essay_text:
+            raise HTTPException(status_code=400, detail={"error": "Essay text is missing from extracted content."})
+
+        # ✅ Ensure essay is a single paragraph (remove extra line breaks)
+        essay_text = " ".join(essay_text.split())
     except Exception as e:
+        print(f"OpenAI API Error: {str(e)}")  # Log the error
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
 
     return process_ielts_essay(essay_text)
