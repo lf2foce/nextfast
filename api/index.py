@@ -172,12 +172,27 @@ async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Opt
         contents = await file.read()
         base64_image = base64.b64encode(contents).decode("utf-8")
 
-        vision_response = client.beta.chat.completions.parse(
+        vision_response =  client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an IELTS evaluator. Your task is to extract the topic and the essay from the provided image. The image contains an IELTS Writing Task 2 prompt followed by an essay response."},
+                {"role": "system", "content": """You are an advanced IELTS evaluator specializing in text extraction from images.
+                Your task is to accurately extract the IELTS Writing Task 2 topic and essay
+                from the provided image, ensuring the response follows a strict JSON format."""},
                 {"role": "user", "content": [
-                    {"type": "text", "text": "Extract the IELTS Writing Task 2 topic and the full essay. If no clear topic is found, return only the essay. Use this exact structured JSON format:\n\n{\n  \"topic\": \"Extracted topic here\",\n  \"essay\": \"Extracted essay text here\"\n}"},
+                    {"type": "text", "text": """"Analyze the provided image and extract:\n"
+                        "1. The **IELTS Writing Task 2 topic** (if explicitly present in the image).\n"
+                        "2. The **full essay response** (ensuring all text is captured accurately).\n\n"
+                        "If the topic is **not explicitly stated**, generate a best-fit topic based on the essay content.\n\n"
+                        "Strictly return JSON format **without markdown or extra text**:\n"
+                        "{\n"
+                        "  \"topic\": \"Extracted topic here\",\n"
+                        "  \"essay\": \"Extracted essay text here\"\n"
+                        "}\n\n"
+                        "Ensure:\n"
+                        "- No additional explanations, comments, or formatting outside of JSON.\n"
+                        "- The topic is concise and relevant.\n"
+                        "- The essay is fully extracted without truncation."
+                     """},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                 ]}
             ]
@@ -185,13 +200,13 @@ async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Opt
 
         try:
             extracted_text = vision_response.choices[0].message.content
-
+            print("------------ extracted text here",extracted_text)
             # ✅ Ensure response is JSON by parsing it
             parsed_response = json.loads(extracted_text)  # Convert string to dictionary
 
-            topic_text = parsed_response.get("topic", None)  # ✅ Extract topic
+            # topic_text = parsed_response.get("topic", None)  # ✅ Extract topic
             essay_text = parsed_response.get("essay", "").strip()  # ✅ Extract essay
-
+            print("------------ essay here",essay_text)
         except json.JSONDecodeError as e:
             print(f"❌ Error: Could not parse GPT response as JSON - {str(e)}")
             return IELTSWritingEvaluation(error="Failed to extract topic and essay from image.")

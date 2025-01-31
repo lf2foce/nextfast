@@ -21,6 +21,7 @@ interface Feedback {
 }
 
 interface IELTSWritingEvaluation {
+    topic: string;
     score: Score;
     feedback: Feedback;
     suggestions: string[];
