@@ -25,7 +25,7 @@ interface IELTSWritingEvaluation {
     feedback: Feedback;
     suggestions: string[];
     original_essay: string;
-    // error?: string; //check error
+    error?: string; //check error
 }
 
 export default function Home() {
@@ -62,14 +62,7 @@ export default function Home() {
             const data = await res.json();
             setResponse(data);
         } catch (error: unknown) {
-            console.error("Error evaluating essay", error);
-            let errorMessage = "An unknown error occurred.";
-            if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-            // setResponse({ error: errorMessage } as IELTSWritingEvaluation);
-            setResponse({ score: { overall_band: 0, task_response: 0, coherence_and_cohesion: 0, lexical_resource: 0, grammatical_range_and_accuracy: 0 }, feedback: { task_response: "", coherence_and_cohesion: "", lexical_resource: "", grammatical_range_and_accuracy: "" }, suggestions: [], original_essay: "" });
-
+          console.error("Error evaluating essay", error);
         }
 
         setLoading(false);
@@ -86,26 +79,27 @@ export default function Home() {
     const exportToPDF = async () => {
       if (!response) return;
       
-      const element = document.getElementById("result-section");
-      if (!element) return;
-
-      html2canvas(element, { scale: 2, windowWidth: document.documentElement.scrollWidth, windowHeight: document.documentElement.scrollHeight }).then((canvas) => {
+      const pdf = new jsPDF("p", "mm", "a4");
+      
+      // Capture the main evaluation section
+      const resultElement = document.getElementById("result-section");
+      if (resultElement) {
+          const canvas = await html2canvas(resultElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
           const imgData = canvas.toDataURL("image/png");
-          const pdf = new jsPDF("p", "mm", "a4");
-          const imgWidth = 190;
-          let imgHeight = (canvas.height * imgWidth) / canvas.width;
-          let position = 10;
-
-          while (imgHeight > 280) { 
-              pdf.addImage(imgData, "PNG", 10, position, imgWidth, 280);
-              imgHeight -= 280;
-              position -= 280;
-              pdf.addPage();
-          }
-          pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-          pdf.save("IELTS_Evaluation.pdf");
-      });
+          pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
+      }
+      
+      // Add a new page for the original essay
+      pdf.addPage();
+      pdf.setFontSize(16);
+      pdf.text("Original Essay:", 10, 20);
+      pdf.setFontSize(12);
+      const splitEssay = pdf.splitTextToSize(response.original_essay, 180);
+      pdf.text(splitEssay, 10, 30);
+      
+      pdf.save("IELTS_Evaluation.pdf");
   };
+
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
@@ -150,31 +144,37 @@ export default function Home() {
             {response && (
                 <div id="result-section" className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
                     <h2 className="text-xl font-semibold mb-4">Results:</h2>
-                    <p className="text-lg font-bold text-green-400">Overall Band: {response.score.overall_band}/9</p>
-                    <div className="grid grid-cols-2 gap-4">
-                        <p><strong>Task Response:</strong> {response.score.task_response}/9</p>
-                        <p><strong>Coherence Cohesion:</strong> {response.score.coherence_and_cohesion}/9</p>
-                        <p><strong>Lexical Resource:</strong> {response.score.lexical_resource}/9</p>
-                        <p><strong>Grammar Accuracy:</strong> {response.score.grammatical_range_and_accuracy}/9</p>
-                    </div>
-                    <h3 className="mt-4 text-lg font-semibold">Feedback:</h3>
-                    <ul className="list-disc pl-5">
-                        <li><strong>Task Response:</strong> {response.feedback.task_response}</li>
-                        <li><strong>Coherence Cohesion:</strong> {response.feedback.coherence_and_cohesion}</li>
-                        <li><strong>Lexical Resource:</strong> {response.feedback.lexical_resource}</li>
-                        <li><strong>Grammar Accuracy:</strong> {response.feedback.grammatical_range_and_accuracy}</li>
-                    </ul>
-                    <h3 className="mt-4 text-lg font-semibold">Areas for Improvement:</h3>
-                    <ul className="list-disc pl-5">
-                        {response.suggestions.map((suggestion, index) => (
-                            <li key={index}>{suggestion}</li>
-                        ))}
-                    </ul>
-                    <h3 className="mt-4 text-lg font-semibold">Original Essay:</h3>
-                    <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap">{response.original_essay}</p>
-                    <button className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
-                        Export to PDF
-                    </button>
+                    {response.error ? (
+                        <p className="text-red-500">{response.error}</p>
+                    ) : (
+                        <>
+                            <p className="text-lg font-bold text-green-400">Overall Band: {response.score.overall_band}/9</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <p><strong>Task Response:</strong> {response.score.task_response}/9</p>
+                                <p><strong>Coherence Cohesion:</strong> {response.score.coherence_and_cohesion}/9</p>
+                                <p><strong>Lexical Resource:</strong> {response.score.lexical_resource}/9</p>
+                                <p><strong>Grammar Accuracy:</strong> {response.score.grammatical_range_and_accuracy}/9</p>
+                            </div>
+                            <h3 className="mt-4 text-lg font-semibold">Feedback:</h3>
+                            <ul className="list-disc pl-5">
+                                <li><strong>Task Response:</strong> {response.feedback.task_response}</li>
+                                <li><strong>Coherence Cohesion:</strong> {response.feedback.coherence_and_cohesion}</li>
+                                <li><strong>Lexical Resource:</strong> {response.feedback.lexical_resource}</li>
+                                <li><strong>Grammar Accuracy:</strong> {response.feedback.grammatical_range_and_accuracy}</li>
+                            </ul>
+                            <h3 className="mt-4 text-lg font-semibold">Areas for Improvement:</h3>
+                            <ul className="list-disc pl-5">
+                                {response.suggestions.map((suggestion, index) => (
+                                    <li key={index}>{suggestion}</li>
+                                ))}
+                            </ul>
+                            <h3 className="mt-4 text-lg font-semibold">Original Essay:</h3>
+                            <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap">{response.original_essay}</p>
+                            <button className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
+                                Export to PDF
+                            </button>
+                        </>
+                    )}
                 </div>
             )}
         </div>

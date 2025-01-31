@@ -60,6 +60,7 @@ class IELTSWritingEvaluation(BaseModel):
     feedback: Feedback
     suggestions: List[str]
     original_essay: str
+    error: Optional[str] = None
 
     @classmethod
     def from_essay(
@@ -83,7 +84,8 @@ class IELTSWritingEvaluation(BaseModel):
             word_count=word_count,
             score=Score(overall_band=overall_band, **scores),
             feedback=Feedback(**feedback),
-            suggestions=suggestions
+            suggestions=suggestions,
+            error=None  # No error in a successful response
         )
 
 class EssayInput(BaseModel):
@@ -98,8 +100,43 @@ def process_ielts_essay(essay_text: str):
     completion = client.beta.chat.completions.parse(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are an IELTS writing evaluator. Analyze the essay and provide structured scores, feedback, and suggestions."},
-            {"role": "user", "content": f"Evaluate the following IELTS essay:\n{essay_text}"}
+            {"role": "system", 
+             "content": """ You are an experienced IELTS writing examiner. Your task is to evaluate IELTS essays according to the official band descriptors.
+
+                Each input contains:
+                - A **topic/question** at the beginning.
+                - A **writing response** following the topic.
+
+                ### **Your Tasks:**
+                1. **Identify the topic/question.** Extract the topic from the beginning of the input.
+                2. **Evaluate the essay based on IELTS criteria:**
+                - **Task Response (TR):** Does the essay fully address the topic? Are arguments well-developed?
+                - **Coherence & Cohesion (CC):** Is the essay logically structured with clear paragraphing and linking words?
+                - **Lexical Resource (LR):** How rich and precise is the vocabulary?
+                - **Grammatical Range & Accuracy (GRA):** Are sentences grammatically correct with varied structures?
+                3. **Return a JSON response** with:
+                - `topic`: The extracted topic/question.
+                - `scores`: Band scores (0-9) for TR, CC, LR, and GRA.
+                - `feedback`: Detailed feedback for each criterion.
+                - `suggestions`: Actionable improvements.
+                - `original_essay`: The exact input essay.
+                - `word_count`: The number of words in the essay."""},
+            {"role": "user", 
+             "content": f""" 
+                Please evaluate my IELTS writing task. The input contains:
+                1. **Topic/Question** (First part of the text).
+                2. **Essay Response** (Following text).
+
+                Your task:
+                - Identify and extract the **topic/question**.
+                - Evaluate the **essay content** based on the official IELTS writing band descriptors.
+                - Provide structured **scores, feedback, and suggestions** for improvement.
+
+                Here is the full input (topic + essay):
+                ---
+                {essay_text}
+                ---
+                """}
         ],
         response_format=IELTSWritingEvaluation,
     )
