@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+import base64
 # import pandas as pd
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 import math
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -88,19 +89,50 @@ class EssayInput(BaseModel):
     essay_text: str
 
 
-@app.post("/api/py/evaluate", response_model=IELTSWritingEvaluation)
-async def evaluate_ielts_essay(essay: EssayInput):
-    if not essay.essay_text.strip():
+def process_ielts_essay(essay_text: str):
+    """Evaluates the IELTS essay and returns structured scores and feedback."""
+    if not essay_text.strip():
         raise HTTPException(status_code=400, detail="Essay text cannot be empty.")
 
-    # OpenAI API request
     completion = client.beta.chat.completions.parse(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are an IELTS writing evaluator. Analyze the essay and provide structured scores, feedback, and suggestions."},
-            {"role": "user", "content": f"Evaluate the following IELTS essay:\n{essay.essay_text}"}
+            {"role": "user", "content": f"Evaluate the following IELTS essay:\n{essay_text}"}
         ],
         response_format=IELTSWritingEvaluation,
     )
-
     return completion.choices[0].message.parsed
+
+@app.post("/api/py/evaluate", response_model=IELTSWritingEvaluation)
+async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Optional[UploadFile] = File(None)):
+    """Handles both text and image input for essay evaluation."""
+    if not essay_text and not file:
+        raise HTTPException(status_code=400, detail="Either text or an image file is required.")
+
+    # If text is provided, evaluate it directly
+    if essay_text:
+        return process_ielts_essay(essay_text)
+
+    # If a file is uploaded, process it with GPT-4o Vision
+    try:
+        contents = await file.read()
+        base64_image = base64.b64encode(contents).decode("utf-8")
+
+        vision_response = client.beta.chat.completions.parse(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "user", "content": [
+                    {"type": "text", "text": "Analyze the image and extract the IELTS essay along with its topic. Return the response in the exact format below:\n\nTopic:\n<Extracted Topic>\n\nEssay:\n<Extracted Essay>"},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
+                ]}
+            ]
+        )
+
+        extracted_text = vision_response.choices[0].message.content
+        essay_text = extracted_text.split("Essay:")[-1].strip()
+        print(f"Extracted text: {essay_text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+
+    return process_ielts_essay(essay_text)

@@ -3,3 +3,4 @@ uvicorn
 pandas==2.2.3
 openai
 python-dotenv
+python-multipart
