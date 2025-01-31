@@ -1,9 +1,12 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+
 import pandas as pd
 from pydantic import BaseModel
 from typing import Dict
 from openai import OpenAI
 from dotenv import load_dotenv
+import logging
 import os
 load_dotenv()
 
@@ -39,7 +42,7 @@ client = OpenAI(
 def evaluate_essay(request: EssayRequest):
     essay = request.essay
     if not essay:
-        return EssayResponse(scores={}, feedback={"error": "Essay cannot be empty"})
+        return JSONResponse(content={"error": "Essay cannot be empty", "scores": {}, "feedback": {}}, status_code=400)
 
     try:
         chat_completion = client.chat.completions.create(
@@ -49,11 +52,17 @@ def evaluate_essay(request: EssayRequest):
                 {"role": "user", "content": f"Essay: {essay}\nEvaluate based on: {rubrics}"}
             ]
         )
+
+        if not chat_completion.choices or not chat_completion.choices[0].message:
+            return JSONResponse(content={"error": "Unexpected API response format.", "scores": {}, "feedback": {}}, status_code=500)
+
         ai_output = chat_completion.choices[0].message.content
         scores, feedback = parse_response(ai_output)
         return EssayResponse(scores=scores, feedback=feedback)
+
     except Exception as e:
-        return EssayResponse(scores={}, feedback={"error": f"Error processing essay: {str(e)}"})
+        return JSONResponse(content={"error": f"Error processing essay: {str(e)}", "scores": {}, "feedback": {}}, status_code=500)
+
 
 def parse_response(ai_output: str):
     """Parse AI output into scores and feedback."""

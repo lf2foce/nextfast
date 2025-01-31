@@ -14,21 +14,49 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/py/evaluate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ essay }),
-            });
-            const data = await res.json();
-            setResponse(data);
-        } catch (error) {
-            console.error("Error evaluating essay", error);
-        }
-        setLoading(false);
-    };
-
+      setLoading(true);
+      setResponse(null);
+  
+      try {
+          const res = await fetch("/api/py/evaluate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ essay }),
+          });
+  
+          if (!res.ok) {
+              // Try to parse JSON, otherwise return a text error
+              let errorMessage = `Server error: ${res.status} ${res.statusText}`;
+              try {
+                  const errorJson = await res.json();
+                  if (errorJson.error) {
+                      errorMessage = errorJson.error;
+                  }
+              } catch {
+                  // If JSON parsing fails, assume it's a plain text response
+                  const errorText = await res.text();
+                  errorMessage = errorText || errorMessage;
+              }
+              throw new Error(errorMessage);
+          }
+  
+          // Ensure response is JSON
+          const data = await res.json();
+          setResponse(data);
+  
+      } catch (error: unknown) {
+          console.error("Error evaluating essay", error);
+  
+          let errorMessage = "An unknown error occurred.";
+          if (error instanceof Error) {
+              errorMessage = error.message;
+          }
+  
+          setResponse({ scores: {}, feedback: { error: errorMessage } });
+      }
+  
+      setLoading(false);
+  };
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
             <h1 className="text-3xl font-bold mb-6">IELTS Writing Examiner</h1>
