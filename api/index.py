@@ -59,6 +59,7 @@ class IELTSWritingEvaluation(BaseModel):
     score: Score
     feedback: Feedback
     suggestions: List[str]
+    original_essay: str
 
     @classmethod
     def from_essay(
@@ -102,7 +103,10 @@ def process_ielts_essay(essay_text: str):
         ],
         response_format=IELTSWritingEvaluation,
     )
-    return completion.choices[0].message.parsed
+    result = completion.choices[0].message.parsed
+    result.original_essay = essay_text  # Attach original essay
+    
+    return result
 
 @app.post("/api/py/evaluate", response_model=IELTSWritingEvaluation)
 async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Optional[UploadFile] = File(None)):

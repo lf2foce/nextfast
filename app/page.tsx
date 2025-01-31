@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 interface Score {
     overall_band: number;
@@ -22,6 +24,8 @@ interface IELTSWritingEvaluation {
     score: Score;
     feedback: Feedback;
     suggestions: string[];
+    original_essay: string;
+    error?: string;
 }
 
 export default function Home() {
@@ -63,7 +67,9 @@ export default function Home() {
             if (error instanceof Error) {
                 errorMessage = error.message;
             }
-            setResponse({ error: errorMessage } as IELTSWritingEvaluation);
+            // setResponse({ error: errorMessage } as IELTSWritingEvaluation);
+            setResponse({ error: errorMessage, score: { overall_band: 0, task_response: 0, coherence_and_cohesion: 0, lexical_resource: 0, grammatical_range_and_accuracy: 0 }, feedback: { task_response: "", coherence_and_cohesion: "", lexical_resource: "", grammatical_range_and_accuracy: "" }, suggestions: [], original_essay: "" });
+
         }
 
         setLoading(false);
@@ -77,10 +83,28 @@ export default function Home() {
     
     const { getRootProps, getInputProps } = useDropzone({ onDrop, accept: { "image/*": [] } });
 
+    const exportToPDF = async () => {
+      if (!response) return;
+      
+      const element = document.getElementById("result-section");
+      if (!element) return;
+
+      html2canvas(element, { scale: 2 }).then((canvas) => {
+          const imgData = canvas.toDataURL("image/png");
+          const pdf = new jsPDF("p", "mm", "a4");
+          const imgWidth = 190;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+          pdf.save("IELTS_Evaluation.pdf");
+      });
+  };
+
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
             <h1 className="text-3xl font-bold mb-6">IELTS Writing Examiner</h1>
             
+            
+
             <div className="flex space-x-4 mb-6">
                 <button className={`p-3 rounded ${activeTab === "text" ? "bg-blue-500" : "bg-gray-700"}`} onClick={() => setActiveTab("text")}>
                     Text Input
@@ -116,34 +140,33 @@ export default function Home() {
             </button>
 
             {response && (
-                <div className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div id="result-section" className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
                     <h2 className="text-xl font-semibold mb-4">Results:</h2>
-                    {response.error ? (
-                        <p className="text-red-500">{response.error}</p>
-                    ) : (
-                        <div>
-                            <p className="text-lg font-bold text-green-400">Overall Band: {response.score.overall_band}/9</p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <p><strong>Task Response:</strong> {response.score.task_response}/9</p>
-                                <p><strong>Coherence Cohesion:</strong> {response.score.coherence_and_cohesion}/9</p>
-                                <p><strong>Lexical Resource:</strong> {response.score.lexical_resource}/9</p>
-                                <p><strong>Grammar Accuracy:</strong> {response.score.grammatical_range_and_accuracy}/9</p>
-                            </div>
-                            <h3 className="mt-4 text-lg font-semibold">Feedback:</h3>
-                            <ul className="list-disc pl-5">
-                                <li><strong>Task Response:</strong> {response.feedback.task_response}</li>
-                                <li><strong>Coherence Cohesion:</strong> {response.feedback.coherence_and_cohesion}</li>
-                                <li><strong>Lexical Resource:</strong> {response.feedback.lexical_resource}</li>
-                                <li><strong>Grammar Accuracy:</strong> {response.feedback.grammatical_range_and_accuracy}</li>
-                            </ul>
-                            <h3 className="mt-4 text-lg font-semibold">Areas for Improvement:</h3>
-                            <ul className="list-disc pl-5">
-                                {response.suggestions.map((suggestion, index) => (
-                                    <li key={index}>{suggestion}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                    <p className="text-lg font-bold text-green-400">Overall Band: {response.score.overall_band}/9</p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <p><strong>Task Response:</strong> {response.score.task_response}/9</p>
+                        <p><strong>Coherence Cohesion:</strong> {response.score.coherence_and_cohesion}/9</p>
+                        <p><strong>Lexical Resource:</strong> {response.score.lexical_resource}/9</p>
+                        <p><strong>Grammar Accuracy:</strong> {response.score.grammatical_range_and_accuracy}/9</p>
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold">Feedback:</h3>
+                    <ul className="list-disc pl-5">
+                        <li><strong>Task Response:</strong> {response.feedback.task_response}</li>
+                        <li><strong>Coherence Cohesion:</strong> {response.feedback.coherence_and_cohesion}</li>
+                        <li><strong>Lexical Resource:</strong> {response.feedback.lexical_resource}</li>
+                        <li><strong>Grammar Accuracy:</strong> {response.feedback.grammatical_range_and_accuracy}</li>
+                    </ul>
+                    <h3 className="mt-4 text-lg font-semibold">Areas for Improvement:</h3>
+                    <ul className="list-disc pl-5">
+                        {response.suggestions.map((suggestion, index) => (
+                            <li key={index}>{suggestion}</li>
+                        ))}
+                    </ul>
+                    <h3 className="mt-4 text-lg font-semibold">Original Essay:</h3>
+                    <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap">{response.original_essay}</p>
+                    <button className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
+                        Export to PDF
+                    </button>
                 </div>
             )}
         </div>
