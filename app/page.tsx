@@ -25,7 +25,7 @@ interface IELTSWritingEvaluation {
     feedback: Feedback;
     suggestions: string[];
     original_essay: string;
-    error?: string;
+    // error?: string; //check error
 }
 
 export default function Home() {
@@ -68,7 +68,7 @@ export default function Home() {
                 errorMessage = error.message;
             }
             // setResponse({ error: errorMessage } as IELTSWritingEvaluation);
-            setResponse({ error: errorMessage, score: { overall_band: 0, task_response: 0, coherence_and_cohesion: 0, lexical_resource: 0, grammatical_range_and_accuracy: 0 }, feedback: { task_response: "", coherence_and_cohesion: "", lexical_resource: "", grammatical_range_and_accuracy: "" }, suggestions: [], original_essay: "" });
+            setResponse({ score: { overall_band: 0, task_response: 0, coherence_and_cohesion: 0, lexical_resource: 0, grammatical_range_and_accuracy: 0 }, feedback: { task_response: "", coherence_and_cohesion: "", lexical_resource: "", grammatical_range_and_accuracy: "" }, suggestions: [], original_essay: "" });
 
         }
 
@@ -89,12 +89,20 @@ export default function Home() {
       const element = document.getElementById("result-section");
       if (!element) return;
 
-      html2canvas(element, { scale: 2 }).then((canvas) => {
+      html2canvas(element, { scale: 2, windowWidth: document.documentElement.scrollWidth, windowHeight: document.documentElement.scrollHeight }).then((canvas) => {
           const imgData = canvas.toDataURL("image/png");
           const pdf = new jsPDF("p", "mm", "a4");
           const imgWidth = 190;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+          let imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let position = 10;
+
+          while (imgHeight > 280) { 
+              pdf.addImage(imgData, "PNG", 10, position, imgWidth, 280);
+              imgHeight -= 280;
+              position -= 280;
+              pdf.addPage();
+          }
+          pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
           pdf.save("IELTS_Evaluation.pdf");
       });
   };
