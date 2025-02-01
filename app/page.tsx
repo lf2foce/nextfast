@@ -28,7 +28,7 @@ interface IELTSWritingEvaluation {
     original_essay: string;
     error?: string; //check error
 }
-export const maxDuration = 300
+export const maxDuration = 60;
 
 export default function Home() {
     const [activeTab, setActiveTab] = useState("text");
