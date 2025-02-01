@@ -172,52 +172,52 @@ async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Opt
         contents = await file.read()
         base64_image = base64.b64encode(contents).decode("utf-8")
 
-        vision_response =  client.chat.completions.create(
+        vision_response =  client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": """You are an advanced IELTS evaluator specializing in text extraction from images.
                 Your task is to accurately extract the IELTS Writing Task 2 topic and essay
-                from the provided image, ensuring the response follows a strict JSON format."""},
+                from the provided image, ensuring the response follows a strict JSON format with No additional explanations, comments, or formatting outside of JSON """},
                 {"role": "user", "content": [
-                    {"type": "text", "text": """"Analyze the provided image and extract:\n"
-                        "1. The **IELTS Writing Task 2 topic** (if explicitly present in the image).\n"
-                        "2. The **full essay response** (ensuring all text is captured accurately).\n\n"
-                        "If the topic is **not explicitly stated**, generate a best-fit topic based on the essay content.\n\n"
-                        "Strictly return JSON format **without markdown or extra text**:\n"
-                        "{\n"
-                        "  \"topic\": \"Extracted topic here\",\n"
-                        "  \"essay\": \"Extracted essay text here\"\n"
-                        "}\n\n"
-                        "Ensure:\n"
-                        "- No additional explanations, comments, or formatting outside of JSON.\n"
-                        "- The topic is concise and relevant.\n"
-                        "- The essay is fully extracted without truncation."
+                    {"type": "text", 
+                     "text": """"Please evaluate my IELTS writing task. The input contains:
+                        1. **Topic/Question** (First part of the text, if available).
+                        2. **Essay Response** (Following text).
+
+                        Your task:
+                        - Identify and extract the **topic/question** if present.
+                        - If no topic is found, **generate a relevant topic based on the essay**.
+                        - Evaluate the **essay content** based on the official IELTS writing band descriptors.
+                        - Provide structured **scores, feedback, and suggestions** for improvement.
                      """},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
+                    {"type": "image_url", 
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                 ]}
-            ]
+            ],
+            response_format=IELTSWritingEvaluation,
         )
 
         try:
             extracted_text = vision_response.choices[0].message.content
-            print("------------ extracted text here",extracted_text)
+            print("------------ extracted text here: ",extracted_text)
             # ✅ Ensure response is JSON by parsing it
             parsed_response = json.loads(extracted_text)  # Convert string to dictionary
 
             # topic_text = parsed_response.get("topic", None)  # ✅ Extract topic
-            essay_text = parsed_response.get("essay", "").strip()  # ✅ Extract essay
-            print("------------ essay here",essay_text)
+            # essay_text = parsed_response.get("essay", "").strip()  # ✅ Extract essay
+            # print("------------ essay here",essay_text)
         except json.JSONDecodeError as e:
             print(f"❌ Error: Could not parse GPT response as JSON - {str(e)}")
             return IELTSWritingEvaluation(error="Failed to extract topic and essay from image.")
         
-        if not essay_text:
-            raise HTTPException(status_code=400, detail={"error": "Essay text is missing from extracted content."})
+        # if not essay_text:
+        #     raise HTTPException(status_code=400, detail={"error": "Essay text is missing from extracted content."})
 
-        # ✅ Ensure essay is a single paragraph (remove extra line breaks)
-        essay_text = " ".join(essay_text.split())
+        # # ✅ Ensure essay is a single paragraph (remove extra line breaks)
+        # essay_text = " ".join(essay_text.split())
     except Exception as e:
-        print(f"OpenAI API Error: {str(e)}")  # Log the error
+        print(f"OpenAI vision API Error: {str(e)}")  # Log the error
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
 
-    return process_ielts_essay(essay_text)
+    # return process_ielts_essay(essay_text)
+    return parsed_response
