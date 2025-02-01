@@ -81,19 +81,19 @@ export default function Home() {
 
         // setLoading(false);
 
-        // Call new API
-        const res = await fetch("/api/evaluate", {  // Call new API
-            method: "POST",
-            body: formData,
-        });
+            // 🔥 Now calling the Next.js API instead of /api/py/evaluate
+            const res = await fetch("/api/evaluate", { 
+                method: "POST",
+                body: formData,
+            });
 
-        if (!res.ok) {
-            const errorResponse = await res.json();
-            throw new Error(`Server error: ${res.status} ${errorResponse.error || res.statusText}`);
-        }
+            if (!res.ok) {
+                const errorResponse = await res.json();
+                throw new Error(`Server error: ${res.status} ${errorResponse.detail || res.statusText}`);
+            }
 
-        const data = await res.json();
-        setResponse(data);
+            const data = await res.json();
+            setResponse(data);
         } catch (error: unknown) {
             console.error("Error evaluating essay", error);
         } finally {
