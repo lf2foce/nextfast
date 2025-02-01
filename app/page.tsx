@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+// import { evaluateEssay } from "./actions/evaluateEssay";
 
 interface Score {
     overall_band: number;
@@ -28,7 +29,7 @@ interface IELTSWritingEvaluation {
     original_essay: string;
     error?: string; //check error
 }
-export const maxDuration = 60;
+// export const maxDuration = 60;
 
 export default function Home() {
     const [activeTab, setActiveTab] = useState("text");
@@ -40,7 +41,18 @@ export default function Home() {
     const handleSubmit = async () => {
         setLoading(true);
         setResponse(null);
+        // action server
+        // try {
+        //     const result = await evaluateEssay(essay, file);
+        //     setResponse(result);
+        //   } catch (error) {
+        //     console.error("Error evaluating essay", error);
+        //   }
+        // end action server
+
+       
         
+        // original code
         try {
             const formData = new FormData();
             if (activeTab === "text" && essay) {
@@ -51,23 +63,42 @@ export default function Home() {
                 throw new Error("Please provide either text or an image.");
             }
 
-            const res = await fetch("/api/py/evaluate", {
-                method: "POST",
-                body: formData,
-            });
+        //     const res = await fetch("/api/py/evaluate", {
+        //         method: "POST",
+        //         body: formData,
+        //     });
 
-            if (!res.ok) {
-                const errorResponse = await res.json();
-                throw new Error(`Server error: ${res.status} ${errorResponse.detail || res.statusText}`);
-            }
+        //     if (!res.ok) {
+        //         const errorResponse = await res.json();
+        //         throw new Error(`Server error: ${res.status} ${errorResponse.detail || res.statusText}`);
+        //     }
 
-            const data = await res.json();
-            setResponse(data);
-        } catch (error: unknown) {
-          console.error("Error evaluating essay", error);
+        //     const data = await res.json();
+        //     setResponse(data);
+        // } catch (error: unknown) {
+        //   console.error("Error evaluating essay", error);
+        // }
+
+        // setLoading(false);
+
+        // Call new API
+        const res = await fetch("/api/evaluate", {  // Call new API
+            method: "POST",
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const errorResponse = await res.json();
+            throw new Error(`Server error: ${res.status} ${errorResponse.error || res.statusText}`);
         }
 
-        setLoading(false);
+        const data = await res.json();
+        setResponse(data);
+        } catch (error: unknown) {
+            console.error("Error evaluating essay", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const onDrop = (acceptedFiles: File[]) => {
@@ -78,28 +109,34 @@ export default function Home() {
     
     const { getRootProps, getInputProps } = useDropzone({ onDrop, accept: { "image/*": [] } });
 
-    const exportToPDF = async () => {
-      if (!response) return;
-      
-      const pdf = new jsPDF("p", "mm", "a4");
-      
-      // Capture the main evaluation section
-      const resultElement = document.getElementById("result-section");
-      if (resultElement) {
-          const canvas = await html2canvas(resultElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
-          const imgData = canvas.toDataURL("image/png");
-          pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
-      }
-      
-      // Add a new page for the original essay
-      pdf.addPage();
-      pdf.setFontSize(16);
-      pdf.text("Original Essay:", 10, 20);
-      pdf.setFontSize(12);
-      const splitEssay = pdf.splitTextToSize(response.original_essay, 180);
-      pdf.text(splitEssay, 10, 30);
-      
-      pdf.save("IELTS_Evaluation.pdf");
+    // Export response to PDF
+  const exportToPDF = async () => {
+    if (!response) return;
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const resultElement = document.getElementById("result-section");
+
+    if (resultElement) {
+      const canvas = await html2canvas(resultElement, {
+        scale: 2,
+        ignoreElements: (el) => el.tagName === "BUTTON",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
+    } else {
+      console.error("Error: Could not find result section.");
+      return;
+    }
+
+    pdf.addPage();
+    pdf.setFontSize(16);
+    pdf.text("Original Essay:", 10, 20);
+    pdf.setFontSize(12);
+    const splitEssay = pdf.splitTextToSize(response.original_essay, 180);
+    pdf.text(splitEssay, 10, 30);
+
+    pdf.save("IELTS_Evaluation.pdf");
   };
 
 
