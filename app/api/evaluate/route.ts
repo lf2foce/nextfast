@@ -18,13 +18,12 @@ export async function POST(req: Request) {
 
         const textResponse = await res.text(); // Get raw response
 
-        // console.log("🔍 Raw response from Python API:", textResponse); // Log it
-
         let data;
         try {
             data = JSON.parse(textResponse);
-        } catch (error) {
-            // console.error("🚨 Failed to parse JSON from backend. Response was:", textResponse);
+        } catch (parseError) {  // ✅ Renamed variable to avoid conflict
+            console.error("🚨 Failed to parse JSON from backend. Response was:", textResponse);
+            console.error("Parse Error:", parseError);
             return NextResponse.json({ error: "Invalid JSON response from backend" }, { status: 500 });
         }
 
@@ -34,8 +33,8 @@ export async function POST(req: Request) {
 
         return NextResponse.json(data, { status: 200 });
 
-    } catch (error) {
-        // console.error("❌ Error evaluating essay:", error);
+    } catch (reqError) { // ✅ Renamed variable to avoid conflict
+        console.error("❌ Error evaluating essay:", reqError);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
