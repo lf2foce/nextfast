@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  functions: {
+    "api/**/*.ts": {
+      maxDuration: 30, // Set within 1-60 seconds
+    },
+  },
 };
 
 export default nextConfig;
