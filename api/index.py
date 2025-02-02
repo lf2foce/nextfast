@@ -221,3 +221,35 @@ async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Opt
 
     # return process_ielts_essay(essay_text)
     return parsed_response
+
+
+@app.post("/api/py/evaluate-multi")
+async def evaluate_multiple_images(files: List[UploadFile] = File(...)):
+    """Processes multiple images together in a single request."""
+    if not files:
+        raise HTTPException(status_code=400, detail="At least one image is required.")
+
+    image_contents = []
+    for file in files:
+        contents = await file.read()
+        base64_image = base64.b64encode(contents).decode("utf-8")
+        image_contents.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
+
+    vision_response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": [
+                {"type": "text", "text": "Extract and evaluate the essays in these images based on IELTS criteria."},
+                *image_contents
+            ]}
+        ],
+        max_tokens=500
+    )
+
+    try:
+        extracted_text = vision_response.choices[0].message.content
+        print("------------ extracted text from multiple: ",extracted_text)
+        parsed_response = json.loads(extracted_text)
+        return parsed_response
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Failed to process the images.")

@@ -44,35 +44,37 @@ export default function Home() {
         
         try {
             const formData = new FormData();
-            if (activeTab === "text" && essay) {
-                formData.append("essay_text", essay);
-            } else if (activeTab === "image" && file) {
-                formData.append("file", file);
-            } else if (activeTab === "multi-image" && files.length > 0) {
-                files.forEach((file, index) => {
-                    formData.append(`file_${index}`, file);
-                });
-            } else {
-                throw new Error("Please provide either text or an image.");
-            }
-
-            const endpoint = activeTab === "multi-image" ? "/api/py/evaluate-multi" : "/api/py/evaluate";
-
-            const res = await fetch(endpoint, {
-                method: "POST",
-                body: formData,
+        if (activeTab === "text" && essay) {
+            formData.append("essay_text", essay);
+        } else if (activeTab === "image" && file) {
+            formData.append("file", file);
+        } else if (activeTab === "multi-image" && files.length > 0) {
+            files.forEach((file) => {
+                formData.append("files", file); // ✅ Ensure the key matches FastAPI expected "files"
             });
-
-            if (!res.ok) {
-                const errorResponse = await res.json();
-                throw new Error(`Server error: ${res.status} ${errorResponse.detail || res.statusText}`);
-            }
-
-            const data = await res.json();
-            setResponse(data);
-        } catch (error: unknown) {
-          console.error("Error evaluating essay", error);
+        } else {
+            throw new Error("Please provide either text or an image.");
         }
+
+        const endpoint = activeTab === "multi-image" 
+            ? "/api/py/evaluate-multi" 
+            : "/api/py/evaluate";
+        
+        const res = await fetch(endpoint, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const errorResponse = await res.json();
+            throw new Error(`Server error: ${res.status} ${errorResponse.detail || res.statusText}`);
+        }
+
+        const data = await res.json();
+        setResponse(data);
+    } catch (error) {
+        console.error("Error evaluating essay", error);
+    }
 
         setLoading(false);
     };
