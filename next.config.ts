@@ -27,14 +27,6 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  functions: {
-    "app/api/**/*.ts": {
-      maxDuration: 30, // Set within 1-60 seconds
-    },
-    "api/*.py": {
-      maxDuration: 30, // Set within 1-60 seconds
-    },
-  },
 };
 
 export default nextConfig;

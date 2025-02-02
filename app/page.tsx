@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import Image from "next/image"; // ✅ Import Next.js Image component
 
 interface Score {
     overall_band: number;
@@ -160,13 +161,15 @@ export default function Home() {
                     <div {...getRootProps()} className="border-dashed border-2 border-gray-500 p-6 rounded-lg cursor-pointer text-center bg-gray-800">
                         <input {...getInputProps()} className="hidden" />
                         <p>Drop images or click to upload</p>
-                        <div className="mt-4 grid grid-cols-3 gap-2">
+                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {files.map((file, index) => (
-                                <div key={index} className="relative w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center">
-                                    <img 
+                                <div key={index} className="relative aspect-square bg-gray-700 rounded-lg flex items-center justify-center">
+                                    <Image 
                                         src={URL.createObjectURL(file)} 
                                         alt="Uploaded preview" 
-                                        className="w-full h-full object-cover rounded-lg"
+                                        layout="fill"
+                                        objectFit="cover"
+                                        className="rounded-lg"
                                     />
                                     <button 
                                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm" 
