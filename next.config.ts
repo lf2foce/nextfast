@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
         source: "/api/py/:path*",
         destination:
           process.env.NODE_ENV === "development"
-            ? "http://127.0.0.1:8000/api/py/:path*"  // ✅ Ensure FastAPI is running here
-            : "/api/",
+            ? "http://127.0.0.1:8000/api/py/:path*"
+            : "/api/:path*",
       },
       {
         source: "/docs",
@@ -26,7 +26,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-
 };
 
 export default nextConfig;

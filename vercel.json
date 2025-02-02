@@ -1,13 +1,27 @@
 {
     "version": 2,
-    "functions": {
-      "api/*.py": {
-        "maxDuration": 60
+    "builds": [
+      {
+        "src": "package.json",
+        "use": "@vercel/next"
       },
-      "app/api/**/*.ts": {
-        "maxDuration": 60
+      {
+        "src": "api/*.py",
+        "use": "@vercel/python"
       }
-    }
-  
-    
+    ],
+    "routes": [
+      {
+        "src": "/api/py/(.*)",
+        "dest": "/api/$1"
+      },
+      {
+        "src": "/docs",
+        "dest": "/api/py/docs"
+      },
+      {
+        "src": "/openapi.json",
+        "dest": "/api/py/openapi.json"
+      }
+    ]
   }
