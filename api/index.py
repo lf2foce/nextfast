@@ -199,14 +199,11 @@ async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Opt
         )
 
         try:
-            extracted_text = vision_response.choices[0].message.content
-            print("------------ extracted text here: ",extracted_text)
+            # extracted_text = vision_response.choices[0].message.content
+            extracted_text = vision_response.choices[0].message.parsed
+            print(f"------------ IELTS Writing Evaluation Result from vision: {extracted_text.model_dump_json(indent=4)}",extracted_text)
             # ✅ Ensure response is JSON by parsing it
-            parsed_response = json.loads(extracted_text)  # Convert string to dictionary
-
-            # topic_text = parsed_response.get("topic", None)  # ✅ Extract topic
-            # essay_text = parsed_response.get("essay", "").strip()  # ✅ Extract essay
-            # print("------------ essay here",essay_text)
+          
         except json.JSONDecodeError as e:
             print(f"❌ Error: Could not parse GPT response as JSON - {str(e)}")
             return IELTSWritingEvaluation(error="Failed to extract topic and essay from image.")
@@ -221,7 +218,7 @@ async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Opt
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
 
     # return process_ielts_essay(essay_text)
-    return parsed_response
+    return extracted_text
 
 
 @app.post("/api/py/evaluate-multi")
