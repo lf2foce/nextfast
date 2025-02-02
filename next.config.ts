@@ -28,7 +28,10 @@ const nextConfig: NextConfig = {
   },
 
   functions: {
-    "api/**/*.ts": {
+    "app/api/**/*.ts": {
+      maxDuration: 30, // Set within 1-60 seconds
+    },
+    "api/*.py": {
       maxDuration: 30, // Set within 1-60 seconds
     },
   },
