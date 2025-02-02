@@ -7,16 +7,7 @@
       "app/api/**/*.ts": {
         "maxDuration": 60
       }
-    },
-    "builds": [
-      {
-        "src": "package.json",
-        "use": "@vercel/next"
-      },
-      {
-        "src": "api/*.py",
-        "use": "@vercel/python"
-      }
-    ]
+    }
+  
     
   }
