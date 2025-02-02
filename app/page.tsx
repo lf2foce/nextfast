@@ -34,6 +34,7 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState("text");
     const [essay, setEssay] = useState("");
     const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [response, setResponse] = useState<IELTSWritingEvaluation | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -47,11 +48,17 @@ export default function Home() {
                 formData.append("essay_text", essay);
             } else if (activeTab === "image" && file) {
                 formData.append("file", file);
+            } else if (activeTab === "multi-image" && files.length > 0) {
+                files.forEach((file, index) => {
+                    formData.append(`file_${index}`, file);
+                });
             } else {
                 throw new Error("Please provide either text or an image.");
             }
 
-            const res = await fetch("/api/py/evaluate", {
+            const endpoint = activeTab === "multi-image" ? "/api/py/evaluate-multi" : "/api/py/evaluate";
+
+            const res = await fetch(endpoint, {
                 method: "POST",
                 body: formData,
             });
@@ -70,13 +77,20 @@ export default function Home() {
         setLoading(false);
     };
 
-    const onDrop = (acceptedFiles: File[]) => {
-        if (acceptedFiles.length > 0) {
-            setFile(acceptedFiles[0]);
-        }
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop: (acceptedFiles) => {
+            if (activeTab === "image") {
+                setFile(acceptedFiles[0]);
+            } else if (activeTab === "multi-image") {
+                setFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
+            }
+        },
+        accept: { "image/*": [] },
+    });
+
+    const removeFile = (index: number) => {
+        setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
     };
-    
-    const { getRootProps, getInputProps } = useDropzone({ onDrop, accept: { "image/*": [] } });
 
     const exportToPDF = async () => {
       if (!response) return;
@@ -105,47 +119,66 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
-            <h1 className="text-3xl font-bold">IELTS Writing Examiner</h1>
+             <div className="flex w-full max-w-2xl bg-gray-800 p-2 rounded-lg">
+                <button 
+                    className={`w-1/3 p-3 rounded-md transition-all ${activeTab === "text" ? "bg-white text-black shadow-lg" : "bg-transparent text-gray-400"}`} 
+                    onClick={() => setActiveTab("text")}
+                >
+                    Text Input
+                </button>
+                <button 
+                    className={`w-1/3 p-3 rounded-md transition-all ${activeTab === "image" ? "bg-white text-black shadow-lg" : "bg-transparent text-gray-400"}`} 
+                    onClick={() => setActiveTab("image")}
+                >
+                    Upload Image
+                </button>
+                <button 
+                    className={`w-1/3 p-3 rounded-md transition-all ${activeTab === "multi-image" ? "bg-white text-black shadow-lg" : "bg-transparent text-gray-400"}`} 
+                    onClick={() => setActiveTab("multi-image")}
+                >
+                    Multiple Images
+                </button>
+            </div>
 
-<div className="flex w-full max-w-2xl bg-gray-800 p-2 rounded-lg">
-    <button 
-        className={`w-1/2 p-3 rounded-md transition-all ${activeTab === "text" ? "bg-white text-black shadow-lg" : "bg-transparent text-gray-400"}`} 
-        onClick={() => setActiveTab("text")}
-    >
-        Text Input
-    </button>
-    <button 
-        className={`w-1/2 p-3 rounded-md transition-all ${activeTab === "image" ? "bg-white text-black shadow-lg" : "bg-transparent text-gray-400"}`} 
-        onClick={() => setActiveTab("image")}
-    >
-        Upload Image
-    </button>
-</div>
-
-<div className="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg space-y-6 mt-4">
-    {activeTab === "text" ? (
-        <textarea
-            className="w-full p-4 border rounded bg-gray-700 text-white resize-none"
-            rows={10}
-            placeholder="Enter your essay here..."
-            value={essay}
-            onChange={(e) => setEssay(e.target.value)}
-        />
-    ) : (
-        <div {...getRootProps()} className="border-dashed border-2 border-gray-500 p-6 rounded-lg cursor-pointer text-center bg-gray-800">
+            <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg space-y-6">
+                {activeTab === "text" ? (
+                    <textarea
+                        className="w-full p-4 border rounded bg-gray-700 text-white resize-none"
+                        rows={10}
+                        placeholder="Enter your essay here..."
+                        value={essay}
+                        onChange={(e) => setEssay(e.target.value)}
+                    />
+                ) : activeTab === "image" ? (
+                    <div {...getRootProps()} className="border-dashed border-2 border-gray-500 p-6 rounded-lg cursor-pointer text-center bg-gray-800">
                         <input {...getInputProps()} className="hidden" />
-                        {file ? (
-                            <img 
-                                src={URL.createObjectURL(file)} 
-                                alt="Uploaded preview" 
-                                className="max-w-full h-auto rounded-md mt-4"
-                            />
-                        ) : (
-                            <p>Drop an image or click to upload an essay</p>
-                        )}
+                        {file ? <p>{file.name}</p> : <p>Drop an image or click to upload an essay</p>}
                     </div>
-    )}
-</div>
+                ) : (
+                    <div {...getRootProps()} className="border-dashed border-2 border-gray-500 p-6 rounded-lg cursor-pointer text-center bg-gray-800">
+                        <input {...getInputProps()} className="hidden" />
+                        <p>Drop images or click to upload</p>
+                        <div className="mt-4 grid grid-cols-3 gap-2">
+                            {files.map((file, index) => (
+                                <div key={index} className="relative w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center">
+                                    <img 
+                                        src={URL.createObjectURL(file)} 
+                                        alt="Uploaded preview" 
+                                        className="w-full h-full object-cover rounded-lg"
+                                    />
+                                    <button 
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm" 
+                                        onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
 
 <button
     className="w-full max-w-2xl p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow-md mt-4"
