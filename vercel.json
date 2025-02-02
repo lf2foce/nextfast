@@ -1,0 +1,10 @@
+{
+    "functions": {
+      "api/index": {
+        "maxDuration": 10
+      },
+      "app/api/evaluate/route": {
+        "maxDuration": 50
+      }
+    }
+  }
