@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import Image from "next/image"; // ✅ Import Next.js Image component
+// export const maxDuration = 60
 
 interface Score {
     overall_band: number;
@@ -29,7 +30,6 @@ interface IELTSWritingEvaluation {
     original_essay: string;
     error?: string; //check error
 }
-export const maxDuration = 300
 
 export default function Home() {
     const [activeTab, setActiveTab] = useState("text");
