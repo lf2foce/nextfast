@@ -1,9 +1,9 @@
 {
     "functions": {
-      "api/index": {
+      "api/index.py": {
         "maxDuration": 10
       },
-      "app/api/evaluate/route": {
+      "app/api/evaluate/route.ts": {
         "maxDuration": 50
       }
     }
