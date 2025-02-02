@@ -122,7 +122,7 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
-             <div className="flex w-full max-w-2xl bg-gray-800 p-2 rounded-lg">
+             <div className="flex w-full max-w-2xl bg-gray-800 p-2 rounded-lg m-4">
                 <button 
                     className={`w-1/3 p-3 rounded-md transition-all ${activeTab === "text" ? "bg-white text-black shadow-lg" : "bg-transparent text-gray-400"}`} 
                     onClick={() => setActiveTab("text")}
