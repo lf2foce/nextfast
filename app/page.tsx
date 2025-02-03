@@ -220,6 +220,10 @@ export default function Home() {
                                     <li key={index}>{suggestion}</li>
                                 ))}
                             </ul>
+
+                            <h3 className="mt-4 text-lg font-semibold">Topic:</h3>
+                            <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap">{response.topic}</p>
+
                             <h3 className="mt-4 text-lg font-semibold">Original Essay:</h3>
                             <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap">{response.original_essay}</p>
                             <button className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
