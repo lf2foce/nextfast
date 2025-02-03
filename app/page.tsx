@@ -96,32 +96,44 @@ export default function Home() {
     };
 
     const exportToPDF = async () => {
-      if (!response) return;
-      
-      const pdf = new jsPDF("p", "mm", "a4");
-      
-      // Capture the main evaluation section
-      const resultElement = document.getElementById("result-section");
-      if (resultElement) {
-          const canvas = await html2canvas(resultElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
-          const imgData = canvas.toDataURL("image/png");
-          pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
-      }
-      
-      // Add a new page for the original essay
-      pdf.addPage();
-      pdf.setFontSize(16);
-      pdf.text("Original Essay:", 10, 20);
-      pdf.setFontSize(12);
-      const splitEssay = pdf.splitTextToSize(response.original_essay, 180);
-      pdf.text(splitEssay, 10, 30);
-      
-      pdf.save("IELTS_Evaluation.pdf");
-  };
+        if (!response) return;
+    
+        const pdf = new jsPDF("p", "mm", "a4");
+    
+        // 🔹 Step 1: Capture the Evaluation Section
+        const evaluationElement = document.getElementById("evaluation-section");
+        if (evaluationElement) {
+            const exportButton = document.getElementById("export-button");
+            if (exportButton) exportButton.style.display = "none"; // Hide button
+    
+            const canvas = await html2canvas(evaluationElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
+            const imgData = canvas.toDataURL("image/png");
+            pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
+    
+            if (exportButton) exportButton.style.display = "block"; // Restore button
+        }
+    
+        // 🔹 Step 2: Capture Topic & Essay Section (Keep Web UI Styling)
+        const topicEssayElement = document.getElementById("topic-essay-section");
+        if (topicEssayElement) {
+            pdf.addPage(); // Ensure it's on a new page
+    
+            const canvas = await html2canvas(topicEssayElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
+            const imgData = canvas.toDataURL("image/png");
+            pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
+        }
+    
+        pdf.save("IELTS_Evaluation.pdf");
+    };
+    
+    
 
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
+            <h1 className="text-3xl font-bold text-center mb-6">
+            IELTS Writing Evaluation
+        </h1>
              <div className="flex w-full max-w-2xl bg-gray-800 p-2 rounded-lg m-4">
                 <button 
                     className={`w-1/3 p-3 rounded-md transition-all ${activeTab === "text" ? "bg-white text-black shadow-lg" : "bg-transparent text-gray-400"}`} 
@@ -146,17 +158,41 @@ export default function Home() {
             <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg space-y-6">
                 {activeTab === "text" ? (
                     <textarea
-                        className="w-full p-4 border rounded bg-gray-700 text-white resize-none"
-                        rows={10}
-                        placeholder="Enter your essay here..."
-                        value={essay}
-                        onChange={(e) => setEssay(e.target.value)}
-                    />
+                    className="w-full p-4 border rounded bg-gray-700 text-white resize-none"
+                    rows={6} // 🔹 Shorten text area
+                    placeholder="Write or paste your IELTS essay here. Minimum 250 words..."
+                    value={essay}
+                    onChange={(e) => setEssay(e.target.value)}
+                />
                 ) : activeTab === "image" ? (
-                    <div {...getRootProps()} className="border-dashed border-2 border-gray-500 p-6 rounded-lg cursor-pointer text-center bg-gray-800">
-                        <input {...getInputProps()} className="hidden" />
-                        {file ? <p>{file.name}</p> : <p>Drop an image or click to upload an essay</p>}
-                    </div>
+                    <div
+                    {...getRootProps()}
+                    className="border-dashed border-2 border-gray-500 p-2 rounded-lg cursor-pointer text-center bg-gray-800 w-full h-[250px] flex items-center justify-center relative overflow-hidden"
+                >
+                    <input {...getInputProps()} className="hidden" />
+                    {file ? (
+                        <div className="relative w-full h-full">
+                            <Image
+                                src={URL.createObjectURL(file)}
+                                alt="Uploaded preview"
+                                fill
+                                className="rounded-md object-cover"
+                                style={{ objectFit: "cover" }} // Ensures it covers the whole zone
+                            />
+                            <button
+                                className="absolute top-2 right-2 px-2 py-1 bg-red-500 text-white rounded-md text-xs"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFile(null);
+                                }}
+                            >
+                                ✕ Remove
+                            </button>
+                        </div>
+                    ) : (
+                        <p className="text-gray-400">Drop an image or click to upload</p>
+                    )}
+                </div>
                 ) : (
                     <div {...getRootProps()} className="border-dashed border-2 border-gray-500 p-6 rounded-lg cursor-pointer text-center bg-gray-800">
                         <input {...getInputProps()} className="hidden" />
@@ -193,46 +229,51 @@ export default function Home() {
 </button>
 
 
-            {response && (
-                <div id="result-section" className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
-                    <h2 className="text-xl font-semibold mb-4">Results:</h2>
-                    {response.error ? (
-                        <p className="text-red-500">{response.error}</p>
-                    ) : (
-                        <>
-                            <p className="text-lg font-bold text-green-400">Overall Band: {response.score.overall_band}/9</p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <p><strong>Task Response:</strong> {response.score.task_response}/9</p>
-                                <p><strong>Coherence Cohesion:</strong> {response.score.coherence_and_cohesion}/9</p>
-                                <p><strong>Lexical Resource:</strong> {response.score.lexical_resource}/9</p>
-                                <p><strong>Grammar Accuracy:</strong> {response.score.grammatical_range_and_accuracy}/9</p>
-                            </div>
-                            <h3 className="mt-4 text-lg font-semibold">Feedback:</h3>
-                            <ul className="list-disc pl-5">
-                                <li><strong>Task Response:</strong> {response.feedback.task_response}</li>
-                                <li><strong>Coherence Cohesion:</strong> {response.feedback.coherence_and_cohesion}</li>
-                                <li><strong>Lexical Resource:</strong> {response.feedback.lexical_resource}</li>
-                                <li><strong>Grammar Accuracy:</strong> {response.feedback.grammatical_range_and_accuracy}</li>
-                            </ul>
-                            <h3 className="mt-4 text-lg font-semibold">Areas for Improvement:</h3>
-                            <ul className="list-disc pl-5">
-                                {response.suggestions.map((suggestion, index) => (
-                                    <li key={index}>{suggestion}</li>
-                                ))}
-                            </ul>
-
-                            <h3 className="mt-4 text-lg font-semibold">Topic:</h3>
-                            <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap">{response.topic}</p>
-
-                            <h3 className="mt-4 text-lg font-semibold">Original Essay:</h3>
-                            <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap">{response.original_essay}</p>
-                            <button className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
-                                Export to PDF
-                            </button>
-                        </>
-                    )}
+{response && (
+    <div id="evaluation-section" className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h2 className="text-xl font-semibold mb-4">Results:</h2>
+        {response.error ? (
+            <p className="text-red-500">{response.error}</p>
+        ) : (
+            <>
+                <p className="text-lg font-bold text-green-400">Overall Band: {response.score.overall_band}/9</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <p><strong>Task Response:</strong> {response.score.task_response}/9</p>
+                    <p><strong>Coherence Cohesion:</strong> {response.score.coherence_and_cohesion}/9</p>
+                    <p><strong>Lexical Resource:</strong> {response.score.lexical_resource}/9</p>
+                    <p><strong>Grammar Accuracy:</strong> {response.score.grammatical_range_and_accuracy}/9</p>
                 </div>
-            )}
+                <h3 className="mt-4 text-lg font-semibold">Feedback:</h3>
+                <ul className="list-disc pl-5">
+                    <li><strong>Task Response:</strong> {response.feedback.task_response}</li>
+                    <li><strong>Coherence Cohesion:</strong> {response.feedback.coherence_and_cohesion}</li>
+                    <li><strong>Lexical Resource:</strong> {response.feedback.lexical_resource}</li>
+                    <li><strong>Grammar Accuracy:</strong> {response.feedback.grammatical_range_and_accuracy}</li>
+                </ul>
+                <h3 className="mt-4 text-lg font-semibold">Areas for Improvement:</h3>
+                <ul className="list-disc pl-5">
+                    {response.suggestions.map((suggestion, index) => (
+                        <li key={index}>{suggestion}</li>
+                    ))}
+                </ul>
+            </>
+        )}
+    </div>
+)}
+
+    {response && (
+        <div id="topic-essay-section" className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold mt-4">Topic:</h3>
+            <p className="bg-gray-700 p-4 rounded-lg whitespace-pre-wrap mt-2">{response.topic}</p>
+
+            <h3 className="mt-4 text-lg font-semibold">Original Essay:</h3>
+            <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap mt-2">{response.original_essay}</p>
+
+            <button id="export-button" className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
+                Export to PDF
+            </button>
+        </div>
+    )}
         </div>
     );
 }

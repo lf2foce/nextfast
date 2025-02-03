@@ -240,6 +240,7 @@ async def evaluate_ielts_essay(essay_text: Optional[str] = Form(None), file: Opt
 @app.post("/api/py/evaluate-multi")
 async def evaluate_multiple_images(files: List[UploadFile] = File(...)):
     """Processes multiple images together in a single request."""
+    start_time = time.time()
     if not files:
         raise HTTPException(status_code=400, detail="At least one image is required.")
 
@@ -252,18 +253,78 @@ async def evaluate_multiple_images(files: List[UploadFile] = File(...)):
     vision_response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
+            {"role": "system", 
+                 "content": """You are an advanced IELTS examiner specializing in text extraction from multiple images. Your task is to accurately extract and evaluate a **single IELTS Writing Task 2 essay** that has been spread across multiple pages due to space limitations.
+
+                ### **Extraction Guidelines**
+                1. **Text Extraction & Merging:**
+                - Extract the full essay text from all uploaded images in the correct sequence.
+                - Ensure paragraphs remain intact and preserve the natural flow of the essay.
+                - If necessary, infer missing words to maintain sentence coherence.
+
+                2. **Identify the Topic/Question:**
+                - If a topic/question is explicitly provided in the images, extract it.
+                - If no topic is found, **generate a relevant topic based on the essay's content.**
+
+                3. **Evaluate the Essay Based on Official IELTS Criteria:**
+                - **Task Response (TR):** Does the essay fully address the topic? Are arguments well-developed?
+                - **Coherence & Cohesion (CC):** Is the essay logically structured with clear paragraphing and linking words?
+                - **Lexical Resource (LR):** How rich and precise is the vocabulary?
+                - **Grammatical Range & Accuracy (GRA):** Are sentences grammatically correct with varied structures?
+
+                4. **Return a JSON response with:**
+                ```json
+                {
+                    "topic": "Extracted or generated topic",
+                    "word_count": 250,
+                    "score": {
+                    "task_response": 7.0,
+                    "coherence_and_cohesion": 6.5,
+                    "lexical_resource": 7.5,
+                    "grammatical_range_and_accuracy": 6.0,
+                    "overall_band": 7.0
+                    },
+                    "feedback": {
+                    "task_response": "Your response is strong but could benefit from more specific examples.",
+                    "coherence_and_cohesion": "Logical flow is clear, but transitions could be smoother.",
+                    "lexical_resource": "Good vocabulary variety, though some word choices feel repetitive.",
+                    "grammatical_range_and_accuracy": "Grammar is mostly accurate, but complex sentence structures need refining."
+                    },
+                    "suggestions": [
+                    "Use more varied linking words to improve cohesion.",
+                    "Provide deeper analysis to support key arguments.",
+                    "Work on sentence variety to enhance fluency."
+                    ],
+                    "original_essay": "The full combined essay text extracted from multiple images."
+                }
+
+                    """},
             {"role": "user", "content": [
                 {"type": "text", "text": "Extract and evaluate the essays in these images based on IELTS criteria."},
                 *image_contents
             ]}
         ],
-        max_tokens=500
+        max_tokens=1000
     )
 
     try:
         extracted_text = vision_response.choices[0].message.content
         print("------------ extracted text from multiple: ",extracted_text)
-        parsed_response = json.loads(extracted_text)
-        return parsed_response
+        # parsed_response = json.loads(extracted_text)
+        # Remove JSON-style formatting and return as a clean dictionary
+        parsed_response = json.loads(extracted_text.replace("```json", "").replace("```", "").strip())
+        
+        # print(f"------------ IELTS Writing Evaluation Result from multiple vision: {parsed_response}")
+        print(json.dumps(parsed_response, indent=4, ensure_ascii=False))
+
+        ielts_result = IELTSWritingEvaluation.model_validate(parsed_response)
+
+        # Step 4: Use `.model_dump_json()`
+        print(f"✔️ IELTS Writing Evaluation Result: {ielts_result.model_dump_json(indent=4)}")
+
+    
+        execution_time = time.time() - start_time
+        print(f"Essay Processing Time: {execution_time:.2f} seconds")
+        return ielts_result #parsed_response
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Failed to process the images.")
