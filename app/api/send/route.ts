@@ -5,14 +5,25 @@ export async function POST(req: Request) {
     try {
         const { recipient, subject, content } = await req.json();
 
-        // Initialize Resend with API Key (ONLY on server)
+        if (!recipient || !subject || !content) {
+            return NextResponse.json({ success: false, error: "Missing required fields." }, { status: 400 });
+        }
+
         const resend = new Resend(process.env.RESEND_API_KEY);
 
         const emailResponse = await resend.emails.send({
-            from: 'Acme <onboarding@resend.dev>',
+            from: "no-reply@thietkeai.com",
             to: recipient,
             subject: subject,
-            html: content,
+            html: `
+                <html>
+                    <body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
+                        <h2>${subject}</h2>
+                        <p>${content}</p>
+                        <p>Best regards,<br/>IELTS Evaluation Team</p>
+                    </body>
+                </html>
+            `,
         });
 
         return NextResponse.json({ success: true, message: "Email sent!", emailResponse });
