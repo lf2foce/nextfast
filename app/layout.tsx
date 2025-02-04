@@ -22,11 +22,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "IELTS Writing Evaluation - AI Feedback",
     description: "Improve your IELTS writing with AI-powered evaluation and feedback.",
-    url: "https://nextwriting.vercel.app/",
+    url: "https://ielts.thietkeai.com/",
     siteName: "NextWriting",
     images: [
       {
-        url: "https://nextwriting.vercel.app/og-image.png", // ✅ Replace with your image URL
+        url: "https://ielts.thietkeai.com/og-image.png", // ✅ Replace with your image URL
         width: 1200,
         height: 630,
         alt: "IELTS Writing Evaluation Preview",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "IELTS Writing Evaluation - AI Feedback",
     description: "Improve your IELTS writing with AI-powered evaluation and feedback.",
-    images: ["https://nextwriting.vercel.app/og-image.png"], // ✅ Replace with your image URL
+    images: ["https://ielts.thietkeai.com/og-image.png"], // ✅ Replace with your image URL
   },
 };
 
