@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
-export const maxDuration = 20;
+export const config = {
+    runtime: "edge",
+  };
+
+// export const maxDuration = 20;
 
 export async function POST(req: Request) {
     try {
