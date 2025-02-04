@@ -89,14 +89,40 @@ export default function Home() {
                     recipient: "mr.anhbt@gmail.com",
                     subject: "Your IELTS Essay Evaluation",
                     content: `
-                        <h2>Your Essay Evaluation is Ready!</h2>
-                        <p><strong>Overall Band:</strong> ${data.score.overall_band}/9</p>
-                        <p><strong>Task Response:</strong> ${data.score.task_response}/9</p>
-                        <p><strong>Coherence & Cohesion:</strong> ${data.score.coherence_and_cohesion}/9</p>
-                        <p><strong>Lexical Resource:</strong> ${data.score.lexical_resource}/9</p>
-                        <p><strong>Grammar Accuracy:</strong> ${data.score.grammatical_range_and_accuracy}/9</p>
-                        <br/>
-                        <p>You can download your evaluation in the app.</p>
+                        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+                            <h2 style="text-align: center; color: #007bff;">IELTS Essay Evaluation</h2>
+                            
+                            <p>Dear Candidate,</p>
+                            <p>Thank you for submitting your essay. Below is your evaluation report.</p>
+
+                            <h3 style="background-color: #007bff; color: #fff; padding: 8px; border-radius: 4px;">Evaluation Summary</h3>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Overall Band:</strong> ${data.score.overall_band}/9</li>
+                                <li><strong>Task Response:</strong> ${data.score.task_response}/9</li>
+                                <li><strong>Coherence & Cohesion:</strong> ${data.score.coherence_and_cohesion}/9</li>
+                                <li><strong>Lexical Resource:</strong> ${data.score.lexical_resource}/9</li>
+                                <li><strong>Grammar Accuracy:</strong> ${data.score.grammatical_range_and_accuracy}/9</li>
+                            </ul>
+
+                            <h3 style="background-color: #28a745; color: #fff; padding: 8px; border-radius: 4px;">Feedback & Suggestions</h3>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Task Response:</strong> ${data.feedback.task_response}</li>
+                                <li><strong>Coherence & Cohesion:</strong> ${data.feedback.coherence_and_cohesion}</li>
+                                <li><strong>Lexical Resource:</strong> ${data.feedback.lexical_resource}</li>
+                                <li><strong>Grammar Accuracy:</strong> ${data.feedback.grammatical_range_and_accuracy}</li>
+                            </ul>
+
+                            <h3 style="background-color: #6c757d; color: #fff; padding: 8px; border-radius: 4px;">Your Essay</h3>
+                            <div style="background-color: #f8f9fa; padding: 12px; border-radius: 4px; border: 1px solid #ddd;">
+                                <p>${data.original_essay.replace(/\n/g, "<br/>")}</p>
+                            </div>
+
+                            <p style="text-align: center; margin-top: 20px;">
+                                <a href="https://nextwriting.vercel.app/" style="display: inline-block; background-color: #007bff; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">Create account to View Full Report</a>
+                            </p>
+
+                            <p>Best regards, <br/> IELTS Evaluation Team</p>
+                        </div>
                     `,
                 }),
             });

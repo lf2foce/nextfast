@@ -10,20 +10,15 @@ export async function POST(req: Request) {
         }
 
         const resend = new Resend(process.env.RESEND_API_KEY);
+        // 🔹 Check if running in local or production
+        const isProduction = process.env.NODE_ENV === "production";
 
         const emailResponse = await resend.emails.send({
-            from: "no-reply@thietkeai.com",
+            // from: "no-reply@thietkeai.com",
+            from: isProduction ? "no-reply@thietkeai.com" : "test@thietkeai.com", // ✅ Change sender based on environment
             to: recipient,
             subject: subject,
-            html: `
-                <html>
-                    <body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
-                        <h2>${subject}</h2>
-                        <p>${content}</p>
-                        <p>Best regards,<br/>IELTS Evaluation Team</p>
-                    </body>
-                </html>
-            `,
+            html: content,
         });
 
         return NextResponse.json({ success: true, message: "Email sent!", emailResponse });
