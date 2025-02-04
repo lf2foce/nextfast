@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "IELTS Writing Evaluation - AI Feedback",
   description: "Get instant AI-powered feedback on your IELTS writing.",
   openGraph: {
