@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+// import { jsPDF } from "jspdf";
+// import html2canvas from "html2canvas";
 import Image from "next/image"; // ✅ Import Next.js Image component
 // export const maxDuration = 60
 
@@ -162,36 +162,36 @@ export default function Home() {
         setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
     };
 
-    const exportToPDF = async () => {
-        if (!response) return;
+    // const exportToPDF = async () => {
+    //     if (!response) return;
     
-        const pdf = new jsPDF("p", "mm", "a4");
+    //     const pdf = new jsPDF("p", "mm", "a4");
     
-        // 🔹 Step 1: Capture the Evaluation Section
-        const evaluationElement = document.getElementById("evaluation-section");
-        if (evaluationElement) {
-            const exportButton = document.getElementById("export-button");
-            if (exportButton) exportButton.style.display = "none"; // Hide button
+    //     // 🔹 Step 1: Capture the Evaluation Section
+    //     const evaluationElement = document.getElementById("evaluation-section");
+    //     if (evaluationElement) {
+    //         const exportButton = document.getElementById("export-button");
+    //         if (exportButton) exportButton.style.display = "none"; // Hide button
     
-            const canvas = await html2canvas(evaluationElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
-            const imgData = canvas.toDataURL("image/png");
-            pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
+    //         const canvas = await html2canvas(evaluationElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
+    //         const imgData = canvas.toDataURL("image/png");
+    //         pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
     
-            if (exportButton) exportButton.style.display = "block"; // Restore button
-        }
+    //         if (exportButton) exportButton.style.display = "block"; // Restore button
+    //     }
     
-        // 🔹 Step 2: Capture Topic & Essay Section (Keep Web UI Styling)
-        const topicEssayElement = document.getElementById("topic-essay-section");
-        if (topicEssayElement) {
-            pdf.addPage(); // Ensure it's on a new page
+    //     // 🔹 Step 2: Capture Topic & Essay Section (Keep Web UI Styling)
+    //     const topicEssayElement = document.getElementById("topic-essay-section");
+    //     if (topicEssayElement) {
+    //         pdf.addPage(); // Ensure it's on a new page
     
-            const canvas = await html2canvas(topicEssayElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
-            const imgData = canvas.toDataURL("image/png");
-            pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
-        }
+    //         const canvas = await html2canvas(topicEssayElement, { scale: 2, ignoreElements: (el) => el.tagName === "BUTTON" });
+    //         const imgData = canvas.toDataURL("image/png");
+    //         pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
+    //     }
     
-        pdf.save("IELTS_Evaluation.pdf");
-    };
+    //     pdf.save("IELTS_Evaluation.pdf");
+    // };
 
     const handleSendEmail = async () => {
         if (!email || !response) return;
@@ -424,10 +424,10 @@ export default function Home() {
                             />
                             <button
                                 onClick={handleSendEmail}
-                                disabled={!email || loading}
-                                className={`mt-3 p-3 rounded-lg font-semibold shadow-md ${!email || loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-500 hover:bg-green-600 text-white"}`}
+                                disabled={!email || eloading}
+                                className={`mt-3 p-3 rounded-lg font-semibold shadow-md ${!email || eloading ? "bg-gray-600 cursor-not-allowed" : "bg-green-500 hover:bg-green-600 text-white"}`}
                             >
-                                {loading ? "Sending..." : "Send Result"}
+                                {eloading ? "Sending..." : "Send Result"}
                             </button>
                         </div>
                     ) : (
