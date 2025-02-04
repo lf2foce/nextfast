@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     title: "IELTS Writing Evaluation - AI Feedback",
     description: "Improve your IELTS writing with AI-powered evaluation and feedback.",
     url: "https://ielts.thietkeai.com/",
-    siteName: "NextWriting",
+    siteName: "IELTS Assessment",
     images: [
       {
         url: "https://ielts.thietkeai.com/og-image.png", // ✅ Replace with your image URL
