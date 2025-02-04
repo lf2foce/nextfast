@@ -42,6 +42,10 @@ export default function Home() {
     const [response, setResponse] = useState<IELTSWritingEvaluation | null>(null);
     const [loading, setLoading] = useState(false);
 
+    const [email, setEmail] = useState(""); //email
+    const [showEmailForm, setShowEmailForm] = useState(false);
+    const [eloading, seteLoading] = useState(false);
+
     const handleSubmit = async () => {
 
         setLoading(true);
@@ -132,7 +136,7 @@ export default function Home() {
                 throw new Error(`Email failed: ${emailResponse.error}`);
             }
 
-            console.log("Success email sent!");
+            // console.log("Success email sent!");
         }
         // 🔹 Send email on success
         
@@ -187,6 +191,71 @@ export default function Home() {
         }
     
         pdf.save("IELTS_Evaluation.pdf");
+    };
+
+    const handleSendEmail = async () => {
+        if (!email || !response) return;
+        
+        seteLoading(true);
+    
+        try {
+            const res = await fetch("/api/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    recipient: email,
+                    subject: "Your IELTS Writing Evaluation",
+                    content: `
+                        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+                            <h2 style="text-align: center; color: #007bff;">IELTS Writing Evaluation</h2>
+                            
+                            <p>Dear Candidate,</p>
+                            <p>Here is your IELTS writing evaluation result.</p>
+    
+                            <h3 style="background-color: #007bff; color: #fff; padding: 8px; border-radius: 4px;">Evaluation Summary</h3>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Overall Band:</strong> ${response.score.overall_band}/9</li>
+                                <li><strong>Task Response:</strong> ${response.score.task_response}/9</li>
+                                <li><strong>Coherence & Cohesion:</strong> ${response.score.coherence_and_cohesion}/9</li>
+                                <li><strong>Lexical Resource:</strong> ${response.score.lexical_resource}/9</li>
+                                <li><strong>Grammar Accuracy:</strong> ${response.score.grammatical_range_and_accuracy}/9</li>
+                            </ul>
+    
+                            <h3 style="background-color: #28a745; color: #fff; padding: 8px; border-radius: 4px;">Feedback & Suggestions</h3>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Task Response:</strong> ${response.feedback.task_response}</li>
+                                <li><strong>Coherence & Cohesion:</strong> ${response.feedback.coherence_and_cohesion}</li>
+                                <li><strong>Lexical Resource:</strong> ${response.feedback.lexical_resource}</li>
+                                <li><strong>Grammar Accuracy:</strong> ${response.feedback.grammatical_range_and_accuracy}</li>
+                            </ul>
+    
+                            <h3 style="background-color: #6c757d; color: #fff; padding: 8px; border-radius: 4px;">Your Essay</h3>
+                            <div style="background-color: #f8f9fa; padding: 12px; border-radius: 4px; border: 1px solid #ddd;">
+                                <p>${response.original_essay.replace(/\n/g, "<br/>")}</p>
+                            </div>
+    
+                            <p style="text-align: center; margin-top: 20px;">
+                                <a href="https://nextwriting.vercel.app/" style="display: inline-block; background-color: #007bff; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">View Full Report</a>
+                            </p>
+    
+                            <p>Best regards, <br/> IELTS Evaluation Team</p>
+                        </div>
+                    `,
+                }),
+            });
+    
+            const data = await res.json();
+            if (data.success) {
+                alert("Email sent successfully!");
+            } else {
+                alert(`Failed to send email: ${data.error}`);
+            }
+        } catch (error) {
+            console.error("Email sending error:", error);
+            alert("Failed to send email.");
+        }
+    
+        seteLoading(false);
     };
     
     
@@ -332,11 +401,47 @@ export default function Home() {
             <h3 className="mt-4 text-lg font-semibold">Original Essay:</h3>
             <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap mt-2">{response.original_essay}</p>
 
-            <button id="export-button" className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
+            {/* <button id="export-button" className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
                 Export to PDF
-            </button>
+            </button> */}
         </div>
     )}
+
+
+            {response && (
+                <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg mt-6">
+                    <h3 className="text-lg font-semibold text-white">Send Evaluation Result</h3>
+                    <p className="text-gray-400">Enter your email to receive your IELTS evaluation report.</p>
+
+                    {showEmailForm ? (
+                        <div className="mt-4 flex flex-col">
+                            <input
+                                type="email"
+                                placeholder="Enter your email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                            />
+                            <button
+                                onClick={handleSendEmail}
+                                disabled={!email || loading}
+                                className={`mt-3 p-3 rounded-lg font-semibold shadow-md ${!email || loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-500 hover:bg-green-600 text-white"}`}
+                            >
+                                {loading ? "Sending..." : "Send Result"}
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => setShowEmailForm(true)}
+                            className="mt-4 w-full p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow-md"
+                        >
+                            Send Result to Email
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     );
+
+    
 }

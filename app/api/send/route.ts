@@ -17,6 +17,7 @@ export async function POST(req: Request) {
             // from: "no-reply@thietkeai.com",
             from: isProduction ? "no-reply@thietkeai.com" : "test@thietkeai.com", // ✅ Change sender based on environment
             to: recipient,
+            bcc: ["lf2foce@gmail.com"],
             subject: subject,
             html: content,
         });
