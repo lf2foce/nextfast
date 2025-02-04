@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://ielts.thietkeai.com";
+const OG_IMAGE = process.env.NEXT_PUBLIC_OG_IMAGE || `${SITE_URL}/og-image.png`;
 
 export const metadata: Metadata = {
   title: "IELTS Writing Evaluation - AI Feedback",
@@ -22,11 +24,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "IELTS Writing Evaluation - AI Feedback",
     description: "Improve your IELTS writing with AI-powered evaluation and feedback.",
-    url: "https://ielts.thietkeai.com/",
+    url: SITE_URL,
     siteName: "IELTS Assessment",
     images: [
       {
-        url: "https://ielts.thietkeai.com/og-image.png", // ✅ Replace with your image URL
+        url: OG_IMAGE, // ✅ Replace with your image URL
         width: 1200,
         height: 630,
         alt: "IELTS Writing Evaluation Preview",
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "IELTS Writing Evaluation - AI Feedback",
     description: "Improve your IELTS writing with AI-powered evaluation and feedback.",
-    images: ["https://ielts.thietkeai.com/og-image.png"], // ✅ Replace with your image URL
+    images: [OG_IMAGE], // ✅ Replace with your image URL
   },
 };
 

@@ -235,7 +235,7 @@ export default function Home() {
                             </div>
     
                             <p style="text-align: center; margin-top: 20px;">
-                                <a href="https://nextwriting.vercel.app/" style="display: inline-block; background-color: #007bff; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">View Full Report</a>
+                                <a href="${process.env.NEXT_PUBLIC_BASE_URL || "https://ielts.thietkeai.com"}" style="display: inline-block; background-color: #007bff; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">View Full Report</a>
                             </p>
     
                             <p>Best regards, <br/> IELTS Evaluation Team</p>
