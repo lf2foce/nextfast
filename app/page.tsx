@@ -42,7 +42,7 @@ export default function Home() {
     const [essay, setEssay] = useState("");
     const [file, setFile] = useState<File | null>(null);
     const [files, setFiles] = useState<File[]>([]);
-    const [response, setResponse] = useState<IELTSWritingEvaluation | null>(null);
+    // const [response, setResponse] = useState<IELTSWritingEvaluation | null>(null);
     const [loading, setLoading] = useState(false);
 
     const [email, setEmail] = useState(""); //email
@@ -324,7 +324,7 @@ export default function Home() {
     // };
 
     const handleSendEmail = async () => {
-        if (!email || !response) return;
+        if (!email || !assessment[activeTab]) return;
         
         seteLoading(true);
     
@@ -344,24 +344,24 @@ export default function Home() {
     
                             <h3 style="background-color: #007bff; color: #fff; padding: 8px; border-radius: 4px;">Evaluation Summary</h3>
                             <ul style="list-style: none; padding: 0;">
-                                <li><strong>Overall Band:</strong> ${response.score.overall_band}/9</li>
-                                <li><strong>Task Response:</strong> ${response.score.task_response}/9</li>
-                                <li><strong>Coherence & Cohesion:</strong> ${response.score.coherence_and_cohesion}/9</li>
-                                <li><strong>Lexical Resource:</strong> ${response.score.lexical_resource}/9</li>
-                                <li><strong>Grammar Accuracy:</strong> ${response.score.grammatical_range_and_accuracy}/9</li>
+                                <li><strong>Overall Band:</strong> ${assessment[activeTab]?.score.overall_band}/9</li>
+                                <li><strong>Task Response:</strong> ${assessment[activeTab]?.score.task_response}/9</li>
+                                <li><strong>Coherence & Cohesion:</strong> ${assessment[activeTab]?.score.coherence_and_cohesion}/9</li>
+                                <li><strong>Lexical Resource:</strong> ${assessment[activeTab]?.score.lexical_resource}/9</li>
+                                <li><strong>Grammar Accuracy:</strong> ${assessment[activeTab]?.score.grammatical_range_and_accuracy}/9</li>
                             </ul>
     
                             <h3 style="background-color: #28a745; color: #fff; padding: 8px; border-radius: 4px;">Feedback & Suggestions</h3>
                             <ul style="list-style: none; padding: 0;">
-                                <li><strong>Task Response:</strong> ${response.feedback.task_response}</li>
-                                <li><strong>Coherence & Cohesion:</strong> ${response.feedback.coherence_and_cohesion}</li>
-                                <li><strong>Lexical Resource:</strong> ${response.feedback.lexical_resource}</li>
-                                <li><strong>Grammar Accuracy:</strong> ${response.feedback.grammatical_range_and_accuracy}</li>
+                                <li><strong>Task Response:</strong> ${assessment[activeTab]?.feedback.task_response}</li>
+                                <li><strong>Coherence & Cohesion:</strong> ${assessment[activeTab]?.feedback.coherence_and_cohesion}</li>
+                                <li><strong>Lexical Resource:</strong> ${assessment[activeTab]?.feedback.lexical_resource}</li>
+                                <li><strong>Grammar Accuracy:</strong> ${assessment[activeTab]?.feedback.grammatical_range_and_accuracy}</li>
                             </ul>
     
                             <h3 style="background-color: #6c757d; color: #fff; padding: 8px; border-radius: 4px;">Your Essay</h3>
                             <div style="background-color: #f8f9fa; padding: 12px; border-radius: 4px; border: 1px solid #ddd;">
-                                <p>${response.original_essay.replace(/\n/g, "<br/>")}</p>
+                                <p>${assessment[activeTab]?.original_essay.replace(/\n/g, "<br/>")}</p>
                             </div>
     
                             <p style="text-align: center; margin-top: 20px;">
