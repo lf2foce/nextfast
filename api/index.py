@@ -254,49 +254,54 @@ async def evaluate_multiple_images(files: List[UploadFile] = File(...)):
         model="gpt-4o-mini",
         messages=[
             {"role": "system", 
-                 "content": """You are an advanced IELTS examiner specializing in text extraction from multiple images. Your task is to accurately extract and evaluate a **single IELTS Writing Task 2 essay** that has been spread across multiple pages due to space limitations.
+                 "content": """You are an advanced IELTS examiner specializing in text extraction and evaluation. Your task is to extract, reconstruct, and assess an **IELTS Writing Task 2 essay** spread across multiple images.
 
                 ### **Extraction Guidelines**
-                1. **Text Extraction & Merging:**
-                - Extract the full essay text from all uploaded images in the correct sequence.
-                - Ensure paragraphs remain intact and preserve the natural flow of the essay.
-                - If necessary, infer missing words to maintain sentence coherence.
+                1. **Extract and Merge the Full Essay:**
+                - Retrieve the complete essay from all images, ensuring sentence continuity.
+                - Preserve paragraph structure and logical flow.
+                - If missing words appear due to image cutoffs, infer them where necessary.
 
-                2. **Identify the Topic/Question:**
-                - If a topic/question is explicitly provided in the images, extract it.
-                - If no topic is found, **generate a relevant topic based on the essay's content.**
+                2. **Identify the Topic:**
+                - Extract the topic/question if explicitly stated.
+                - If missing, generate a relevant topic based on the essay's content.
 
                 3. **Evaluate the Essay Based on Official IELTS Criteria:**
                 - **Task Response (TR):** Does the essay fully address the topic? Are arguments well-developed?
-                - **Coherence & Cohesion (CC):** Is the essay logically structured with clear paragraphing and linking words?
-                - **Lexical Resource (LR):** How rich and precise is the vocabulary?
-                - **Grammatical Range & Accuracy (GRA):** Are sentences grammatically correct with varied structures?
+                - **Coherence & Cohesion (CC):** Is the essay structured logically with clear paragraphing and linking words?
+                - **Lexical Resource (LR):** How varied and precise is the vocabulary?
+                - **Grammatical Range & Accuracy (GRA):** Are sentences grammatically correct with diverse structures?
 
-                4. **Return a JSON response with:**
-                ```json
+                4. **Provide Feedback and Suggestions:**
+                - Constructive feedback for improvement.
+                - Specific suggestions on enhancing coherence, vocabulary, and grammar.
+
+                5. **Return a Structured JSON Response:**
+                The output should be structured as follows:
                 {
                     "topic": "Extracted or generated topic",
                     "word_count": 250,
                     "score": {
-                    "task_response": 7.0,
-                    "coherence_and_cohesion": 6.5,
-                    "lexical_resource": 7.5,
-                    "grammatical_range_and_accuracy": 6.0,
-                    "overall_band": 7.0
+                        "task_response": 7.0,
+                        "coherence_and_cohesion": 6.5,
+                        "lexical_resource": 7.5,
+                        "grammatical_range_and_accuracy": 6.0,
+                        "overall_band": 7.0
                     },
                     "feedback": {
-                    "task_response": "Your response is strong but could benefit from more specific examples.",
-                    "coherence_and_cohesion": "Logical flow is clear, but transitions could be smoother.",
-                    "lexical_resource": "Good vocabulary variety, though some word choices feel repetitive.",
-                    "grammatical_range_and_accuracy": "Grammar is mostly accurate, but complex sentence structures need refining."
+                        "task_response": "Your response is strong but could benefit from more specific examples.",
+                        "coherence_and_cohesion": "Logical flow is clear, but transitions could be smoother.",
+                        "lexical_resource": "Good vocabulary variety, though some word choices feel repetitive.",
+                        "grammatical_range_and_accuracy": "Grammar is mostly accurate, but complex sentence structures need refining."
                     },
                     "suggestions": [
-                    "Use more varied linking words to improve cohesion.",
-                    "Provide deeper analysis to support key arguments.",
-                    "Work on sentence variety to enhance fluency."
+                        "Use more varied linking words to improve cohesion.",
+                        "Provide deeper analysis to support key arguments.",
+                        "Work on sentence variety to enhance fluency."
                     ],
-                    "original_essay": "The full combined essay text extracted from multiple images."
+                    "original_essay": "The full reconstructed essay text."
                 }
+                
 
                     """},
             {"role": "user", "content": [
