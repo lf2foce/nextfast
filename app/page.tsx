@@ -49,10 +49,19 @@ export default function Home() {
     const [showEmailForm, setShowEmailForm] = useState(false);
     const [eloading, seteLoading] = useState(false);
 
+    const [assessment, setAssessment] = useState<{ [key: string]: IELTSWritingEvaluation | null }>({
+        text: null,
+        image: null,
+        "multi-image": null,
+    });
+    
+
     const handleSubmit = async () => {
 
         setLoading(true);
-        setResponse(null);
+        // setResponse(null);
+        setAssessment((prev) => ({ ...prev, [activeTab]: null }));
+
         
         try {
             const formData = new FormData();
@@ -90,7 +99,8 @@ export default function Home() {
         }
 
         const data = await res.json();
-        setResponse(data);
+        // setResponse(data);
+        setAssessment((prev) => ({ ...prev, [activeTab]: data })); // ✅ Store response per tab
 
         //email here
         // 🔹 Call the new API to send an email
@@ -481,30 +491,30 @@ export default function Home() {
 </button>
 
 
-{response && (
+{assessment[activeTab] && (
     <div id="evaluation-section" className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
         <h2 className="text-xl font-semibold mb-4">Results:</h2>
-        {response.error ? (
-            <p className="text-red-500">{response.error}</p>
+        {assessment[activeTab].error ? (
+            <p className="text-red-500">{assessment[activeTab].error}</p>
         ) : (
             <>
-                <p className="text-lg font-bold text-green-400">Overall Band: {response.score.overall_band}/9</p>
+                <p className="text-lg font-bold text-green-400">Overall Band: {assessment[activeTab].score.overall_band}/9</p>
                 <div className="grid grid-cols-2 gap-4">
-                    <p><strong>Task Response:</strong> {response.score.task_response}/9</p>
-                    <p><strong>Coherence Cohesion:</strong> {response.score.coherence_and_cohesion}/9</p>
-                    <p><strong>Lexical Resource:</strong> {response.score.lexical_resource}/9</p>
-                    <p><strong>Grammar Accuracy:</strong> {response.score.grammatical_range_and_accuracy}/9</p>
+                    <p><strong>Task Response:</strong> {assessment[activeTab].score.task_response}/9</p>
+                    <p><strong>Coherence Cohesion:</strong> {assessment[activeTab].score.coherence_and_cohesion}/9</p>
+                    <p><strong>Lexical Resource:</strong> {assessment[activeTab].score.lexical_resource}/9</p>
+                    <p><strong>Grammar Accuracy:</strong> {assessment[activeTab].score.grammatical_range_and_accuracy}/9</p>
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">Feedback:</h3>
                 <ul className="list-disc pl-5">
-                    <li><strong>Task Response:</strong> {response.feedback.task_response}</li>
-                    <li><strong>Coherence Cohesion:</strong> {response.feedback.coherence_and_cohesion}</li>
-                    <li><strong>Lexical Resource:</strong> {response.feedback.lexical_resource}</li>
-                    <li><strong>Grammar Accuracy:</strong> {response.feedback.grammatical_range_and_accuracy}</li>
+                    <li><strong>Task Response:</strong> {assessment[activeTab].feedback.task_response}</li>
+                    <li><strong>Coherence Cohesion:</strong> {assessment[activeTab].feedback.coherence_and_cohesion}</li>
+                    <li><strong>Lexical Resource:</strong> {assessment[activeTab].feedback.lexical_resource}</li>
+                    <li><strong>Grammar Accuracy:</strong> {assessment[activeTab].feedback.grammatical_range_and_accuracy}</li>
                 </ul>
                 <h3 className="mt-4 text-lg font-semibold">Areas for Improvement:</h3>
                 <ul className="list-disc pl-5">
-                    {response.suggestions.map((suggestion, index) => (
+                    {assessment[activeTab].suggestions.map((suggestion, index) => (
                         <li key={index}>{suggestion}</li>
                     ))}
                 </ul>
@@ -513,13 +523,13 @@ export default function Home() {
     </div>
 )}
 
-    {response && (
+    {assessment[activeTab] && (
         <div id="topic-essay-section" className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
             <h3 className="text-lg font-semibold mt-4">Topic:</h3>
-            <p className="bg-gray-700 p-4 rounded-lg whitespace-pre-wrap mt-2">{response.topic}</p>
+            <p className="bg-gray-700 p-4 rounded-lg whitespace-pre-wrap mt-2">{assessment[activeTab]?.topic}</p>
 
             <h3 className="mt-4 text-lg font-semibold">Original Essay:</h3>
-            <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap mt-2">{response.original_essay}</p>
+            <p className="bg-gray-700 p-3 rounded-lg whitespace-pre-wrap mt-2">{assessment[activeTab]?.original_essay}</p>
 
             {/* <button id="export-button" className="mt-4 w-full p-3 bg-green-400 hover:bg-green-500 text-white rounded-lg font-semibold" onClick={exportToPDF}>
                 Export to PDF
@@ -528,7 +538,7 @@ export default function Home() {
     )}
 
 
-            {response && (
+            {assessment[activeTab] && (
                 <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg mt-6">
                     <h3 className="text-lg font-semibold text-white">Send Evaluation Result</h3>
                     <p className="text-gray-400">Enter your email to receive your IELTS evaluation report.</p>
