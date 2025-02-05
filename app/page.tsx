@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useDropzone } from "react-dropzone";
+import { useDropzone, FileRejection } from "react-dropzone";
+
 // import { jsPDF } from "jspdf";
 // import html2canvas from "html2canvas";
 import Image from "next/image"; // ✅ Import Next.js Image component
-// import heicConvert from 'heic-convert';
+import heicConvert from 'heic-convert';
 
 // export const maxDuration = 60
 
@@ -169,18 +170,88 @@ export default function Home() {
     //     return file;
     // };
 
+    const onDropRejected = (fileRejections: FileRejection[]) => {
+        const oversizedFiles = fileRejections.map(({ file }) => `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`);
+        
+        alert(`These files are too large (Max ${MAX_FILE_SIZE_MB}MB each):\n${oversizedFiles.join("\n")}`);
+    };
+
     const MAX_FILE_SIZE_MB = 5; // Max 5MB per file
     const MAX_TOTAL_SIZE_MB = 20; // Max 20MB total upload
+
+    const compressImage = async (file: File, maxWidth = 1024, quality = 0.8): Promise<File> => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async (event) => {
+                const imgSrc = event.target?.result as string;
+    
+                const img = document.createElement("img");
+                img.src = imgSrc;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d");
+    
+                    const scaleFactor = maxWidth / img.width;
+                    canvas.width = maxWidth;
+                    canvas.height = img.height * scaleFactor;
+    
+                    ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+    
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            resolve(new File([blob], file.name, { type: "image/jpeg" }));
+                        } else {
+                            resolve(file); // Fallback: return original file
+                        }
+                    }, "image/jpeg", quality);
+                };
+            };
+        });
+    };
+    
+
+    const convertHEICtoJPG = async (file: File) => {
+        if (file.type === "image/heic" || file.name.endsWith(".heic")) {
+            const buffer = await file.arrayBuffer();
+            const outputBuffer = await heicConvert({
+                buffer,
+                format: "JPEG",
+                quality: 0.8,
+            });
+            return new File([outputBuffer], file.name.replace(".heic", ".jpg"), {
+                type: "image/jpeg",
+            });
+        }
+        return file;
+    };
+
+    const processImages = async (acceptedFiles: File[]): Promise<File[]> => {
+        return await Promise.all(
+            acceptedFiles.map(async (file) => {
+                if (file.type === "image/heic" || file.name.endsWith(".heic")) {
+                    console.log(`Converting HEIC file: ${file.name}`); // Debugging
+                    return await convertHEICtoJPG(file); // ✅ Convert HEIC to JPG
+                } else {
+                    return await compressImage(file); // ✅ Compress JPG/PNG
+                }
+            })
+        );
+    };
+
     const { getRootProps, getInputProps } = useDropzone({
         onDrop: async (acceptedFiles) => {
             if (activeTab === "image") {
-                setFile(acceptedFiles[0]);
+                // setFile(acceptedFiles[0]);
+                const processedFile = await processImages([acceptedFiles[0]]);
+                setFile(processedFile[0]);
             } else if (activeTab === "multi-image") {
                 
                 let totalSize = 0;
-                let validFiles: File[] = [];
+                const processedFiles = await processImages(acceptedFiles);
+                const validFiles: File[] = [];
 
-                acceptedFiles.forEach((file) => {
+                processedFiles.forEach((file) => {
                     const fileSizeMB = file.size / (1024 * 1024);
                     totalSize += fileSizeMB;
 
@@ -198,10 +269,14 @@ export default function Home() {
                 setFiles((prevFiles) => [...prevFiles, ...validFiles]);
             }
         },
+        onDropRejected, // 🔹 Now detects oversized files
         accept: { "image/*": [] },
         // accept: { "image/jpeg": [], "image/png": [] }, // 🔹 Prevents HEIC selection
         multiple: true,
     });
+
+    // Handle rejected files due to size
+ 
 
     const removeFile = (index: number) => {
         setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
