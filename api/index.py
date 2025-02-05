@@ -254,11 +254,14 @@ async def evaluate_multiple_images(files: List[UploadFile] = File(...)):
         model="gpt-4o-mini",
         messages=[
             {"role": "system", 
-                 "content": """You are an advanced IELTS examiner specializing in text extraction and evaluation. Your task is to extract, reconstruct, and assess an **IELTS Writing Task 2 essay** spread across multiple images.
+                 "content": """You are an advanced IELTS examiner specializing in text extraction and evaluation.
+                Your task is to **strictly extract one single IELTS Writing Task 2 essay**, even if multiple essays are detected. 
+                Select the **most complete** essay only.
 
                 ### **Extraction Guidelines**
                 1. **Extract and Merge the Full Essay:**
                 - Retrieve the complete essay from all images, ensuring sentence continuity.
+                - If two essays exist, select only the one with **the highest word count and completeness**.
                 - Preserve paragraph structure and logical flow.
                 - If missing words appear due to image cutoffs, infer them where necessary.
 
@@ -276,8 +279,13 @@ async def evaluate_multiple_images(files: List[UploadFile] = File(...)):
                 - Constructive feedback for improvement.
                 - Specific suggestions on enhancing coherence, vocabulary, and grammar.
 
-                5. **Return a Structured JSON Response:**
-                The output should be structured as follows:
+                5. **Strict JSON Output Format:** 
+                   - Ensure the response **is always valid JSON** and does not contain any extraneous characters.
+                   - Do not include markdown formatting like ```json.
+                   - Ensure correct nesting of objects and lists.
+
+                6. **Return a Valid JSON Response:** 
+                   Ensure the JSON response is strictly formatted as follows:
                 {
                     "topic": "Extracted or generated topic",
                     "word_count": 250,
