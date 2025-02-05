@@ -5,7 +5,7 @@ import { useDropzone } from "react-dropzone";
 // import { jsPDF } from "jspdf";
 // import html2canvas from "html2canvas";
 import Image from "next/image"; // ✅ Import Next.js Image component
-import heicConvert from 'heic-convert';
+// import heicConvert from 'heic-convert';
 
 // export const maxDuration = 60
 
@@ -55,11 +55,18 @@ export default function Home() {
         
         try {
             const formData = new FormData();
+
+            
+
         if (activeTab === "text" && essay) {
             formData.append("essay_text", essay);
         } else if (activeTab === "image" && file) {
             formData.append("file", file);
         } else if (activeTab === "multi-image" && files.length > 0) {
+
+            
+                // alert(`Number of files: ${files.length}`);
+                
             files.forEach((file) => {
                 formData.append("files", file); // ✅ Ensure the key matches FastAPI expected "files"
             });
@@ -149,29 +156,44 @@ export default function Home() {
         setLoading(false);
     };
 
-    const convertHEICtoJPG = async (file: File) => {
-        if (file.type === "image/heic" || file.name.endsWith(".heic")) {
-            const buffer = await file.arrayBuffer();
-            const outputBuffer = await heicConvert({
-                buffer,
-                format: 'JPEG',
-                quality: 0.8,
-            });
-            return new File([outputBuffer], file.name.replace(".heic", ".jpg"), { type: "image/jpeg" });
-        }
-        return file;
-    };
+    // const convertHEICtoJPG = async (file: File) => {
+    //     if (file.type === "image/heic" || file.name.endsWith(".heic")) {
+    //         const buffer = await file.arrayBuffer();
+    //         const outputBuffer = await heicConvert({
+    //             buffer,
+    //             format: 'JPEG',
+    //             quality: 0.8,
+    //         });
+    //         return new File([outputBuffer], file.name.replace(".heic", ".jpg"), { type: "image/jpeg" });
+    //     }
+    //     return file;
+    // };
 
+    const MAX_FILE_SIZE_MB = 5; // Max 5MB per file
+    const MAX_TOTAL_SIZE_MB = 20; // Max 20MB total upload
     const { getRootProps, getInputProps } = useDropzone({
         onDrop: async (acceptedFiles) => {
             if (activeTab === "image") {
                 setFile(acceptedFiles[0]);
             } else if (activeTab === "multi-image") {
                 
-                const processedFiles = await Promise.all(
-                    acceptedFiles.map(async (file) => await convertHEICtoJPG(file))
-                );
-                const validFiles = processedFiles.filter((file) => file !== null);
+                let totalSize = 0;
+                let validFiles: File[] = [];
+
+                acceptedFiles.forEach((file) => {
+                    const fileSizeMB = file.size / (1024 * 1024);
+                    totalSize += fileSizeMB;
+
+                    if (fileSizeMB <= MAX_FILE_SIZE_MB) {
+                        validFiles.push(file);
+                    }
+                });
+
+                // Show total size warning
+                if (totalSize > MAX_TOTAL_SIZE_MB) {
+                    alert(`Total upload size exceeds ${MAX_TOTAL_SIZE_MB}MB! Current: ${totalSize.toFixed(2)}MB`);
+                    return;
+                }
                 // setFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
                 setFiles((prevFiles) => [...prevFiles, ...validFiles]);
             }
