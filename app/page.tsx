@@ -176,8 +176,9 @@ export default function Home() {
                 // setFiles((prevFiles) => [...prevFiles, ...validFiles]);
             }
         },
-        accept: { "image/*": [],"image/heic": [] },
-        // accept: { "image/jpeg": [], "image/png": [] }, // 🔹 Prevents HEIC selection
+        // accept: { "image/*": [] },
+        accept: { "image/jpeg": [], "image/png": [] }, // 🔹 Prevents HEIC selection
+        multiple: true,
     });
 
     const removeFile = (index: number) => {
