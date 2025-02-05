@@ -5,7 +5,7 @@ import { useDropzone } from "react-dropzone";
 // import { jsPDF } from "jspdf";
 // import html2canvas from "html2canvas";
 import Image from "next/image"; // ✅ Import Next.js Image component
-import heicConvert from 'heic-convert';
+// import heicConvert from 'heic-convert';
 
 // export const maxDuration = 60
 
@@ -149,18 +149,18 @@ export default function Home() {
         setLoading(false);
     };
 
-    const convertHEICtoJPG = async (file: File) => {
-        if (file.type === "image/heic" || file.name.endsWith(".heic")) {
-            const buffer = await file.arrayBuffer();
-            const outputBuffer = await heicConvert({
-                buffer,
-                format: 'JPEG',
-                quality: 0.8,
-            });
-            return new File([outputBuffer], file.name.replace(".heic", ".jpg"), { type: "image/jpeg" });
-        }
-        return file;
-    };
+    // const convertHEICtoJPG = async (file: File) => {
+    //     if (file.type === "image/heic" || file.name.endsWith(".heic")) {
+    //         const buffer = await file.arrayBuffer();
+    //         const outputBuffer = await heicConvert({
+    //             buffer,
+    //             format: 'JPEG',
+    //             quality: 0.8,
+    //         });
+    //         return new File([outputBuffer], file.name.replace(".heic", ".jpg"), { type: "image/jpeg" });
+    //     }
+    //     return file;
+    // };
 
     const { getRootProps, getInputProps } = useDropzone({
         onDrop: async (acceptedFiles) => {
@@ -168,15 +168,15 @@ export default function Home() {
                 setFile(acceptedFiles[0]);
             } else if (activeTab === "multi-image") {
                 
-                const processedFiles = await Promise.all(
-                    acceptedFiles.map(async (file) => await convertHEICtoJPG(file))
-                );
-                const validFiles = processedFiles.filter((file) => file !== null);
-                // setFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
-                setFiles((prevFiles) => [...prevFiles, ...validFiles]);
+                // const processedFiles = await Promise.all(
+                //     acceptedFiles.map(async (file) => await convertHEICtoJPG(file))
+                // );
+                // const validFiles = processedFiles.filter((file) => file !== null);
+                setFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
+                // setFiles((prevFiles) => [...prevFiles, ...validFiles]);
             }
         },
-        accept: { "image/*": [] },
+        accept: { "image/*": [],"image/heic": [] },
         // accept: { "image/jpeg": [], "image/png": [] }, // 🔹 Prevents HEIC selection
     });
 
